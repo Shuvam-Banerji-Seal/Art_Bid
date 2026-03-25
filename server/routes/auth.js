@@ -127,4 +127,28 @@ router.get('/me', authMiddleware, async (req, res) => {
   }
 });
 
+// PATCH /api/auth/profile
+router.patch('/profile', authMiddleware, async (req, res) => {
+  const { username, roll_number, contact_number } = req.body;
+  if (username !== undefined && username.trim().length < 2) {
+    return res.status(400).json({ error: 'Username must be at least 2 characters' });
+  }
+  try {
+    const result = await pool.query(
+      `UPDATE users
+       SET username = COALESCE($1, username),
+           roll_number = COALESCE($2, roll_number),
+           contact_number = COALESCE($3, contact_number)
+       WHERE id = $4
+       RETURNING id, email, username, roll_number, contact_number, is_admin`,
+      [username?.trim() || null, roll_number || null, contact_number || null, req.user.userId]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Profile update error:', err);
+    res.status(500).json({ error: 'Server error during profile update' });
+  }
+});
+
 module.exports = router;
