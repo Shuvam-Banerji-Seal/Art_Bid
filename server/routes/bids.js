@@ -3,7 +3,9 @@ const pool = require('../db/pool');
 const authMiddleware = require('../middleware/auth');
 const router = express.Router();
 
-// In-memory rate limit store (per user per artwork, 5 seconds)
+// In-memory rate limit store (per user per artwork, 5 seconds).
+// Suitable for single-server intranet deployment. For multi-instance deployments,
+// replace with a Redis-backed store.
 const bidRateLimit = new Map();
 
 // POST /api/bids
