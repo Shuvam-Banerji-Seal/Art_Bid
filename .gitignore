@@ -1,3 +1,18 @@
+# Node.js
+node_modules/
+server/node_modules/
+client/node_modules/
+client/dist/
+npm-debug.log*
+
+# Environment variables
+.env
+server/.env
+client/.env
+
+# Build artifacts
+client/dist/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
