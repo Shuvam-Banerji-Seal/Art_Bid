@@ -1,0 +1,213 @@
+
+> chitrakavyam-server@1.0.0 start
+> node index.js
+
+Chitrakavyam server running on port 3001
+Auction monitor error: AggregateError [ECONNREFUSED]: 
+    at /home/shuvam/codes/Art_Bid/server/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async monitorAuctionState (/home/shuvam/codes/Art_Bid/server/sockets/bidHandler.js:9:28) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:5432
+        at createConnectionError (node:net:1746:14)
+        at afterConnectMultiple (node:net:1776:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '::1',
+      port: 5432
+    },
+    Error: connect ECONNREFUSED 127.0.0.1:5432
+        at createConnectionError (node:net:1746:14)
+        at afterConnectMultiple (node:net:1776:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 5432
+    }
+  ]
+}
+Auction monitor error: AggregateError [ECONNREFUSED]: 
+    at /home/shuvam/codes/Art_Bid/server/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Timeout.monitorAuctionState [as _onTimeout] (/home/shuvam/codes/Art_Bid/server/sockets/bidHandler.js:9:28) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:5432
+        at createConnectionError (node:net:1746:14)
+        at afterConnectMultiple (node:net:1776:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '::1',
+      port: 5432
+    },
+    Error: connect ECONNREFUSED 127.0.0.1:5432
+        at createConnectionError (node:net:1746:14)
+        at afterConnectMultiple (node:net:1776:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 5432
+    }
+  ]
+}
+Auction monitor error: AggregateError [ECONNREFUSED]: 
+    at /home/shuvam/codes/Art_Bid/server/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Timeout.monitorAuctionState [as _onTimeout] (/home/shuvam/codes/Art_Bid/server/sockets/bidHandler.js:9:28) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:5432
+        at createConnectionError (node:net:1746:14)
+        at afterConnectMultiple (node:net:1776:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '::1',
+      port: 5432
+    },
+    Error: connect ECONNREFUSED 127.0.0.1:5432
+        at createConnectionError (node:net:1746:14)
+        at afterConnectMultiple (node:net:1776:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 5432
+    }
+  ]
+}
+Auction monitor error: AggregateError [ECONNREFUSED]: 
+    at /home/shuvam/codes/Art_Bid/server/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Timeout.monitorAuctionState [as _onTimeout] (/home/shuvam/codes/Art_Bid/server/sockets/bidHandler.js:9:28) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:5432
+        at createConnectionError (node:net:1746:14)
+        at afterConnectMultiple (node:net:1776:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '::1',
+      port: 5432
+    },
+    Error: connect ECONNREFUSED 127.0.0.1:5432
+        at createConnectionError (node:net:1746:14)
+        at afterConnectMultiple (node:net:1776:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 5432
+    }
+  ]
+}
+Auction monitor error: AggregateError [ECONNREFUSED]: 
+    at /home/shuvam/codes/Art_Bid/server/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Timeout.monitorAuctionState [as _onTimeout] (/home/shuvam/codes/Art_Bid/server/sockets/bidHandler.js:9:28) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:5432
+        at createConnectionError (node:net:1746:14)
+        at afterConnectMultiple (node:net:1776:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '::1',
+      port: 5432
+    },
+    Error: connect ECONNREFUSED 127.0.0.1:5432
+        at createConnectionError (node:net:1746:14)
+        at afterConnectMultiple (node:net:1776:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 5432
+    }
+  ]
+}
+Auction monitor error: AggregateError [ECONNREFUSED]: 
+    at /home/shuvam/codes/Art_Bid/server/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Timeout.monitorAuctionState [as _onTimeout] (/home/shuvam/codes/Art_Bid/server/sockets/bidHandler.js:9:28) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:5432
+        at createConnectionError (node:net:1746:14)
+        at afterConnectMultiple (node:net:1776:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '::1',
+      port: 5432
+    },
+    Error: connect ECONNREFUSED 127.0.0.1:5432
+        at createConnectionError (node:net:1746:14)
+        at afterConnectMultiple (node:net:1776:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 5432
+    }
+  ]
+}
+Auction monitor error: AggregateError [ECONNREFUSED]: 
+    at /home/shuvam/codes/Art_Bid/server/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Timeout.monitorAuctionState [as _onTimeout] (/home/shuvam/codes/Art_Bid/server/sockets/bidHandler.js:9:28) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:5432
+        at createConnectionError (node:net:1746:14)
+        at afterConnectMultiple (node:net:1776:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '::1',
+      port: 5432
+    },
+    Error: connect ECONNREFUSED 127.0.0.1:5432
+        at createConnectionError (node:net:1746:14)
+        at afterConnectMultiple (node:net:1776:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 5432
+    }
+  ]
+}
+Auction monitor error: AggregateError [ECONNREFUSED]: 
+    at /home/shuvam/codes/Art_Bid/server/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Timeout.monitorAuctionState [as _onTimeout] (/home/shuvam/codes/Art_Bid/server/sockets/bidHandler.js:9:28) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:5432
+        at createConnectionError (node:net:1746:14)
+        at afterConnectMultiple (node:net:1776:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '::1',
+      port: 5432
+    },
+    Error: connect ECONNREFUSED 127.0.0.1:5432
+        at createConnectionError (node:net:1746:14)
+        at afterConnectMultiple (node:net:1776:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 5432
+    }
+  ]
+}

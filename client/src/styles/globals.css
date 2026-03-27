@@ -13,6 +13,7 @@
   --error: #e05a4e;
   --radius: 8px;
   --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --gallery-cols: 3;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -59,3 +60,12 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent-gold); }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .fade-in { animation: fadeIn 0.3s ease forwards; }
 .pulse { animation: pulse-gold 2s infinite; }
+
+@media (max-width: 1100px) {
+  :root { --gallery-cols: 2; }
+}
+
+@media (max-width: 700px) {
+  :root { --gallery-cols: 1; }
+  body { font-size: 14px; }
+}

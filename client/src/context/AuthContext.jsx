@@ -7,23 +7,31 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const refreshUser = async () => {
+    try {
+      const res = await api.get('/auth/me');
+      setUser(res.data);
+      return res.data;
+    } catch {
+      setUser(null);
+      return null;
+    }
+  };
+
   useEffect(() => {
-    api.get('/auth/me')
-      .then(res => setUser(res.data))
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
+    refreshUser().finally(() => setLoading(false));
   }, []);
 
   const login = async (email, password) => {
-    const res = await api.post('/auth/login', { email, password });
-    setUser(res.data.user);
-    return res.data;
+    await api.post('/auth/login', { email, password });
+    const freshUser = await refreshUser();
+    return { user: freshUser };
   };
 
   const signup = async (data) => {
-    const res = await api.post('/auth/signup', data);
-    setUser(res.data.user);
-    return res.data;
+    await api.post('/auth/signup', data);
+    const freshUser = await refreshUser();
+    return { user: freshUser };
   };
 
   const logout = async () => {
@@ -32,7 +40,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

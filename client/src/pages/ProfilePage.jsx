@@ -7,8 +7,9 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [bids, setBids] = useState([]);
+  const [watchlist, setWatchlist] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({ username: '', roll_number: '', contact_number: '' });
@@ -16,7 +17,16 @@ export default function ProfilePage() {
   useEffect(() => {
     if (user) {
       setForm({ username: user.username || '', roll_number: user.roll_number || '', contact_number: user.contact_number || '' });
-      api.get('/bids/my').then(res => setBids(res.data)).catch(console.error).finally(() => setLoading(false));
+      Promise.all([
+        api.get('/bids/my'),
+        api.get('/watchlist'),
+      ])
+        .then(([bidsRes, watchRes]) => {
+          setBids(bidsRes.data);
+          setWatchlist(watchRes.data);
+        })
+        .catch(console.error)
+        .finally(() => setLoading(false));
     }
   }, [user]);
 
@@ -97,7 +107,13 @@ export default function ProfilePage() {
           {editMode && (
             <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={async () => {
               try {
-                await api.patch('/auth/profile', form);
+                const res = await api.patch('/auth/profile', form);
+                await refreshUser();
+                setForm({
+                  username: res.data?.username || '',
+                  roll_number: res.data?.roll_number || '',
+                  contact_number: res.data?.contact_number || '',
+                });
                 toast.success('Profile updated');
                 setEditMode(false);
               } catch { toast.error('Failed to update profile'); }
@@ -157,6 +173,25 @@ export default function ProfilePage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+
+        <div className="card" style={{ padding: 24, marginTop: 24 }}>
+          <h2 style={{ fontFamily: 'Cormorant Garamond', fontSize: 22, marginBottom: 20 }}>Watchlist</h2>
+          {watchlist.length === 0 ? (
+            <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>No watched artworks yet.</p>
+          ) : (
+            <div style={{ display: 'grid', gap: 10 }}>
+              {watchlist.map(item => (
+                <div key={item.artwork_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'var(--bg-elevated)', borderRadius: 8 }}>
+                  <div>
+                    <div style={{ fontSize: 15 }}>{item.title || 'Untitled'}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{item.artist_name}</div>
+                  </div>
+                  <Link to={`/artwork/${item.artwork_id}`} className="btn btn-outline" style={{ padding: '6px 12px', fontSize: 12 }}>View</Link>
+                </div>
+              ))}
             </div>
           )}
         </div>

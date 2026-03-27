@@ -1,0 +1,225 @@
+
+> chitrakavyam-server@1.0.0 start
+> node index.js
+
+Chitrakavyam server running on port 3001
+ValidationError: The 'X-Forwarded-For' header is set but the Express 'trust proxy' setting is false (default). This could indicate a misconfiguration which would prevent express-rate-limit from accurately identifying users. See https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/ for more information.
+    at Object.xForwardedForHeader (/home/shuvam/codes/Art_Bid/server/node_modules/express-rate-limit/dist/index.cjs:185:13)
+    at wrappedValidations.<computed> [as xForwardedForHeader] (/home/shuvam/codes/Art_Bid/server/node_modules/express-rate-limit/dist/index.cjs:397:22)
+    at Object.keyGenerator (/home/shuvam/codes/Art_Bid/server/node_modules/express-rate-limit/dist/index.cjs:658:20)
+    at /home/shuvam/codes/Art_Bid/server/node_modules/express-rate-limit/dist/index.cjs:710:32
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /home/shuvam/codes/Art_Bid/server/node_modules/express-rate-limit/dist/index.cjs:691:5 {
+  code: 'ERR_ERL_UNEXPECTED_X_FORWARDED_FOR',
+  help: 'https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/'
+}
+Socket connected: xm6_-dgVjHJj6E4nAAAP, user: 4
+Socket connected: 9RUqrmWe9Kk8LC1UAAAQ, user: 4
+Socket connected: to0JvAWCRrfLIY9AAAAR, user: 4
+Socket disconnected: to0JvAWCRrfLIY9AAAAR
+Socket disconnected: xm6_-dgVjHJj6E4nAAAP
+Socket disconnected: 9RUqrmWe9Kk8LC1UAAAQ
+Socket connected: 45xQNio1cQmLhHFyAAAW, user: 4
+Socket connected: WRO2gXWmJcFALL60AAAX, user: 4
+Socket connected: NL5eSwbZBCxA51J3AAAZ, user: 4
+Socket disconnected: NL5eSwbZBCxA51J3AAAZ
+Socket connected: pZcbbnhoUmBWTIJUAAAb, user: 4
+Socket disconnected: 45xQNio1cQmLhHFyAAAW
+Socket disconnected: pZcbbnhoUmBWTIJUAAAb
+Socket disconnected: WRO2gXWmJcFALL60AAAX
+Socket connected: -bX73cLqX1wp1tTHAAAg, user: 4
+Socket connected: LZaiaSm8AKOxNH80AAAh, user: 4
+Socket disconnected: LZaiaSm8AKOxNH80AAAh
+Socket disconnected: -bX73cLqX1wp1tTHAAAg
+Socket connected: C_aKlsbGbX7SUSqHAAAn, user: 4
+Socket connected: cqut_0F-w3FHynnqAAAo, user: 4
+Socket connected: e6hjpQ0wRfTOgugXAAAq, user: 4
+Socket disconnected: e6hjpQ0wRfTOgugXAAAq
+Socket disconnected: cqut_0F-w3FHynnqAAAo
+Socket disconnected: C_aKlsbGbX7SUSqHAAAn
+ValidationError: The 'X-Forwarded-For' header is set but the Express 'trust proxy' setting is false (default). This could indicate a misconfiguration which would prevent express-rate-limit from accurately identifying users. See https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/ for more information.
+    at Object.xForwardedForHeader (/home/shuvam/codes/Art_Bid/server/node_modules/express-rate-limit/dist/index.cjs:185:13)
+    at wrappedValidations.<computed> [as xForwardedForHeader] (/home/shuvam/codes/Art_Bid/server/node_modules/express-rate-limit/dist/index.cjs:397:22)
+    at Object.keyGenerator (/home/shuvam/codes/Art_Bid/server/node_modules/express-rate-limit/dist/index.cjs:658:20)
+    at /home/shuvam/codes/Art_Bid/server/node_modules/express-rate-limit/dist/index.cjs:710:32
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /home/shuvam/codes/Art_Bid/server/node_modules/express-rate-limit/dist/index.cjs:691:5 {
+  code: 'ERR_ERL_UNEXPECTED_X_FORWARDED_FOR',
+  help: 'https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/'
+}
+Socket connected: sEWsmHoBlg9EGky4AAA4, user: 1
+Socket connected: QbQb7Tl8OhsIN9hYAAA5, user: 1
+Socket connected: r7aFWOpMKOxAwJvtAAA6, user: 1
+Socket disconnected: QbQb7Tl8OhsIN9hYAAA5
+Socket disconnected: sEWsmHoBlg9EGky4AAA4
+Socket disconnected: r7aFWOpMKOxAwJvtAAA6
+Socket connected: xiQWq3kTkFB1_JkgAABA, user: 1
+Socket connected: SJK4C_JhyFQn7ULNAABD, user: 1
+Socket connected: _LNyGdLZwy-x4BQVAABE, user: 1
+Socket disconnected: SJK4C_JhyFQn7ULNAABD
+Socket disconnected: _LNyGdLZwy-x4BQVAABE
+Socket disconnected: xiQWq3kTkFB1_JkgAABA
+Socket connected: enPyfaIV-s4EnVVAAABf, user: 1
+Socket connected: x9R64R7PMeDhJGWqAABi, user: 1
+Socket disconnected: x9R64R7PMeDhJGWqAABi
+Socket connected: Y8p3_nRMAp2kgI3yAABp, user: 1
+Socket connected: hetGcH4Ituer9kjlAABq, user: 1
+Socket connected: pkRHyrqQ_Nt3DNUkAABr, user: 1
+Socket disconnected: pkRHyrqQ_Nt3DNUkAABr
+Socket disconnected: hetGcH4Ituer9kjlAABq
+Socket disconnected: Y8p3_nRMAp2kgI3yAABp
+Socket connected: vrlzmvsut0W-9UjBAABu, user: 1
+Socket disconnected: vrlzmvsut0W-9UjBAABu
+Socket connected: F9GlCb5V-LvPQ4WyAABx, user: 1
+Socket disconnected: F9GlCb5V-LvPQ4WyAABx
+Socket connected: jo4_MApH1Fy3RUkTAAB4, user: 1
+Socket connected: EBzxF0eN4GSQGB38AAB5, user: 1
+Socket connected: MJfQv5g_TZIb5UXDAAB6, user: 1
+Socket disconnected: EBzxF0eN4GSQGB38AAB5
+Socket disconnected: jo4_MApH1Fy3RUkTAAB4
+Socket disconnected: MJfQv5g_TZIb5UXDAAB6
+Socket connected: A0u8M8E3hkJepS7PAAB9, user: 1
+Socket disconnected: A0u8M8E3hkJepS7PAAB9
+Socket disconnected: enPyfaIV-s4EnVVAAABf
+Socket connected: oCZYX9ascwBRKil4AACA, user: 1
+Socket disconnected: oCZYX9ascwBRKil4AACA
+Socket connected: ZxuYLcO6bYz8TYOaAACH, user: 1
+Socket connected: OmgGOUNLKXfBlGUaAACI, user: 1
+Socket connected: s83bNw0rU3cfdyb8AACJ, user: 1
+Socket disconnected: OmgGOUNLKXfBlGUaAACI
+Socket disconnected: s83bNw0rU3cfdyb8AACJ
+Socket disconnected: ZxuYLcO6bYz8TYOaAACH
+Socket connected: QesRlBpYj0EUKMMvAACM, user: 1
+Socket disconnected: QesRlBpYj0EUKMMvAACM
+Socket connected: 5JvDRgx9je7-JoweAACP, user: 1
+Socket disconnected: 5JvDRgx9je7-JoweAACP
+Socket connected: DdmboMnyAlrZuHk9AACW, user: 1
+Socket connected: hNPlIwJ-tnlIBqWwAACX, user: 1
+Socket connected: 8S-kRpYMhh-a_bm8AACY, user: 1
+Socket connected: G2MsPpJoSDFo97LfAACb, user: 1
+Socket disconnected: G2MsPpJoSDFo97LfAACb
+Socket connected: UTED1zdZmWzAP9FpAACe, user: 1
+Socket disconnected: UTED1zdZmWzAP9FpAACe
+Socket connected: Ly4FkdfyzTc1KvMcAACl, user: 1
+Socket connected: 7locnJBAbGShllWEAACm, user: 1
+Socket connected: aIDtkT2B7zWoPFs8AACn, user: 1
+Socket disconnected: Ly4FkdfyzTc1KvMcAACl
+Socket disconnected: 7locnJBAbGShllWEAACm
+Socket disconnected: aIDtkT2B7zWoPFs8AACn
+Socket connected: -R8sTBvA-uJ6clr5AACq, user: 1
+Socket disconnected: -R8sTBvA-uJ6clr5AACq
+Socket connected: huOnXPbjBePHPeK-AACt, user: 1
+Socket disconnected: huOnXPbjBePHPeK-AACt
+Socket connected: QY2Q4DW4-uQnb3yVAACw, user: 1
+Socket disconnected: QY2Q4DW4-uQnb3yVAACw
+Socket connected: m2t3SHtHQ4GpWHQRAACz, user: 1
+Socket disconnected: m2t3SHtHQ4GpWHQRAACz
+Socket connected: Q0h_GOKVj0j4wpm5AAC2, user: 1
+Socket disconnected: Q0h_GOKVj0j4wpm5AAC2
+Socket connected: 3iJvTKQjY6MGZxxMAAC9, user: 1
+Socket connected: g3CE2Jkms_J7zm6zAAC-, user: 1
+Socket connected: Tal3NPrOrP_hkSyhAAC_, user: 1
+Socket disconnected: Tal3NPrOrP_hkSyhAAC_
+Socket disconnected: g3CE2Jkms_J7zm6zAAC-
+Socket disconnected: 3iJvTKQjY6MGZxxMAAC9
+Socket connected: eIT2yrI8V3nUFd2ZAADF, user: 1
+Socket connected: ITcX_mE8tLxzbmfkAADG, user: 1
+Socket connected: hFNQafaKrVx0KHsjAADH, user: 1
+Socket disconnected: hFNQafaKrVx0KHsjAADH
+Socket connected: mjiy58I47TqcjcDfAADJ, user: 1
+Socket disconnected: ITcX_mE8tLxzbmfkAADG
+Socket disconnected: mjiy58I47TqcjcDfAADJ
+Socket disconnected: eIT2yrI8V3nUFd2ZAADF
+Socket connected: X0VVRDjsqGYA9aAWAADM, user: 1
+Socket disconnected: X0VVRDjsqGYA9aAWAADM
+Socket connected: LitRyEFSdXl1dbfdAADP, user: 1
+Socket disconnected: LitRyEFSdXl1dbfdAADP
+Socket connected: QbdPzFEew2qLSmnFAADW, user: 1
+Socket connected: rVkBWc5vqY-op_D_AADX, user: 1
+Socket connected: M0kpJLEfMRhPFikEAADY, user: 1
+Socket disconnected: M0kpJLEfMRhPFikEAADY
+Socket disconnected: rVkBWc5vqY-op_D_AADX
+Socket disconnected: QbdPzFEew2qLSmnFAADW
+Socket connected: kj63OCKqo1QLDR9nAADd, user: 1
+Socket connected: jALc7q1ecOQnsvqMAADe, user: 1
+Socket connected: 5opZ67dGYIxugq2rAADh, user: 1
+Socket disconnected: jALc7q1ecOQnsvqMAADe
+Socket disconnected: kj63OCKqo1QLDR9nAADd
+Socket disconnected: 5opZ67dGYIxugq2rAADh
+Socket connected: AgTcu7Vy_Q75AX72AADk, user: 1
+Socket disconnected: AgTcu7Vy_Q75AX72AADk
+Socket connected: gh3iTiWZiugoSwD1AADn, user: 1
+Socket disconnected: gh3iTiWZiugoSwD1AADn
+Socket connected: rO5nPkp6fyXVAdteAADu, user: 1
+Socket connected: eN6JAmFD6c8LtQXuAADv, user: 1
+Socket connected: oSSG1xj6h5okr1BjAADw, user: 1
+Socket disconnected: oSSG1xj6h5okr1BjAADw
+Socket connected: 2W7oSgguAF52LAarAAD3, user: 1
+Socket disconnected: rO5nPkp6fyXVAdteAADu
+Socket connected: -j_8foPPZBwZPFgVAAD4, user: 1
+Socket connected: QGpjXuIGzjJs3J7pAAD5, user: 1
+Socket disconnected: eN6JAmFD6c8LtQXuAADv
+Socket disconnected: -j_8foPPZBwZPFgVAAD4
+Socket disconnected: QGpjXuIGzjJs3J7pAAD5
+Socket disconnected: 2W7oSgguAF52LAarAAD3
+Socket connected: U-lTriIEf8C-QM9iAAD8, user: 1
+Socket disconnected: U-lTriIEf8C-QM9iAAD8
+Socket connected: -g_V9qGY4pARXZXHAAD_, user: 1
+Socket disconnected: -g_V9qGY4pARXZXHAAD_
+Socket connected: dp-UsG7WaxqVgnTuAAEG, user: 1
+Socket connected: t9Bk_6mroP30g5TjAAEH, user: 1
+Socket connected: TYqAV2PiM-BqRr00AAEI, user: 1
+Socket disconnected: dp-UsG7WaxqVgnTuAAEG
+Socket disconnected: TYqAV2PiM-BqRr00AAEI
+Socket disconnected: t9Bk_6mroP30g5TjAAEH
+Socket connected: wq71nSQ-Cg0TDiLaAAEL, user: 1
+Socket disconnected: wq71nSQ-Cg0TDiLaAAEL
+Socket connected: VVRQFznOixUT1lvKAAEO, user: 1
+Socket disconnected: VVRQFznOixUT1lvKAAEO
+Socket connected: iTvj4yOxwaIkWw3DAAEV, user: 1
+Socket connected: U7_13YlSnXSMGfMPAAEW, user: 1
+Socket connected: n1hG_y9FFDYJz1rwAAEX, user: 1
+Socket disconnected: iTvj4yOxwaIkWw3DAAEV
+Socket disconnected: U7_13YlSnXSMGfMPAAEW
+Socket disconnected: n1hG_y9FFDYJz1rwAAEX
+Socket connected: 7uVugz5zuQmgMs7CAAEe, user: 1
+Socket connected: qkv2WJs30K6hdW-qAAEf, user: 1
+Socket connected: xpKUqzJjWkiC7RAuAAEg, user: 1
+Socket disconnected: qkv2WJs30K6hdW-qAAEf
+Socket disconnected: xpKUqzJjWkiC7RAuAAEg
+Socket disconnected: 7uVugz5zuQmgMs7CAAEe
+Socket connected: B1-BEVOLZ1cDL80RAAEj, user: 1
+Socket disconnected: B1-BEVOLZ1cDL80RAAEj
+Socket connected: IxvFMKOYLdAs8h2YAAEm, user: 1
+Socket disconnected: IxvFMKOYLdAs8h2YAAEm
+Socket connected: 7FEybZCKTxDI38lvAAEt, user: 1
+Socket connected: sfz2UUH_T9fFXYTKAAEu, user: 1
+Socket connected: V4TbqFuUAnl3z2rbAAEv, user: 1
+Socket disconnected: 7FEybZCKTxDI38lvAAEt
+Socket disconnected: V4TbqFuUAnl3z2rbAAEv
+Socket disconnected: sfz2UUH_T9fFXYTKAAEu
+Socket connected: qgzkN3SbBsNShldLAAEy, user: 1
+Socket disconnected: qgzkN3SbBsNShldLAAEy
+Socket disconnected: 8S-kRpYMhh-a_bm8AACY
+Socket disconnected: hNPlIwJ-tnlIBqWwAACX
+Socket disconnected: DdmboMnyAlrZuHk9AACW
+Socket connected: wkALHZ808sDrbQXpAAE8, user: 1
+Socket connected: OfJ-xU5WoRcRwjaUAAE9, user: 1
+Socket connected: f28MGMRKK2rZNgA-AAE-, user: 1
+Socket disconnected: OfJ-xU5WoRcRwjaUAAE9
+Socket disconnected: f28MGMRKK2rZNgA-AAE-
+Socket disconnected: wkALHZ808sDrbQXpAAE8
+Socket connected: 5k8zfSIdYlUymgvZAAFB, user: 1
+Socket disconnected: 5k8zfSIdYlUymgvZAAFB
+Socket connected: Dw-4QZt-hbgexS08AAFE, user: 1
+Socket disconnected: Dw-4QZt-hbgexS08AAFE
+Socket connected: iUtHlXm9q-pWZJkfAAFH, user: 1
+Socket disconnected: iUtHlXm9q-pWZJkfAAFH
+Socket connected: mzKUrEs-mEBWhg4_AAFO, user: 1
+Socket connected: Mzt_BRfylem-j2GhAAFP, user: 1
+Socket connected: J5e65-pK-BIJz9ujAAFQ, user: 1
+Socket disconnected: mzKUrEs-mEBWhg4_AAFO
+Socket disconnected: Mzt_BRfylem-j2GhAAFP
+Socket disconnected: J5e65-pK-BIJz9ujAAFQ
+Socket connected: do3gQxbz_816bdbPAAFS, user: 1
+Socket disconnected: do3gQxbz_816bdbPAAFS

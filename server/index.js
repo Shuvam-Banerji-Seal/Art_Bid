@@ -1,5 +1,7 @@
 const express = require('express');
 const http = require('http');
+const https = require('https');
+const fs = require('fs');
 const { Server } = require('socket.io');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
@@ -8,17 +10,40 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
-const server = http.createServer(app);
+const USE_HTTPS = process.env.USE_HTTPS === 'true';
+const SSL_CERT_PATH = process.env.SSL_CERT_PATH;
+const SSL_KEY_PATH = process.env.SSL_KEY_PATH;
+
+let server;
+if (USE_HTTPS) {
+  if (!SSL_CERT_PATH || !SSL_KEY_PATH) {
+    throw new Error('USE_HTTPS is true but SSL_CERT_PATH/SSL_KEY_PATH are not set');
+  }
+  const cert = fs.readFileSync(SSL_CERT_PATH);
+  const key = fs.readFileSync(SSL_KEY_PATH);
+  server = https.createServer({ cert, key }, app);
+} else {
+  server = http.createServer(app);
+}
+
+const rawOrigins = process.env.CLIENT_URLS || process.env.CLIENT_URL || 'http://localhost:5173';
+const allowedOrigins = rawOrigins.split(',').map(o => o.trim()).filter(Boolean);
+
 const io = new Server(server, {
-  cors: { origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true },
+  cors: { origin: allowedOrigins, credentials: true },
 });
 
 global.io = io;
 
-const ALLOWED_ORIGIN = process.env.CLIENT_URL || 'http://localhost:5173';
-
 // Middleware
-app.use(cors({ origin: ALLOWED_ORIGIN, credentials: true }));
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
 app.use(express.json());
 app.use(cookieParser());
 
@@ -45,7 +70,8 @@ function generateCsrfToken() {
 
 app.get('/api/csrf-token', (req, res) => {
   const token = generateCsrfToken();
-  res.cookie('csrf_token', token, { httpOnly: false, sameSite: 'strict', secure: process.env.NODE_ENV === 'production' });
+  const secureCookie = process.env.NODE_ENV === 'production' || USE_HTTPS;
+  res.cookie('csrf_token', token, { httpOnly: false, sameSite: 'strict', secure: secureCookie });
   res.json({ csrfToken: token });
 });
 
@@ -65,7 +91,8 @@ app.use((req, res, next) => {
   // Validate Origin/Referer regardless
   const origin = req.get('Origin') || req.get('Referer');
   if (origin) {
-    const allowed = [ALLOWED_ORIGIN, `http://localhost:${process.env.PORT || 3001}`];
+    const selfScheme = USE_HTTPS ? 'https' : 'http';
+    const allowed = [...allowedOrigins, `${selfScheme}://localhost:${process.env.PORT || 3001}`];
     const originOk = allowed.some(o => origin.startsWith(o));
     if (!originOk) {
       return res.status(403).json({ error: 'Forbidden: invalid request origin' });
@@ -85,10 +112,18 @@ app.use((req, res, next) => {
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+if (process.env.MAINTENANCE_MODE === 'true') {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/offline.html'));
+  });
+}
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/artworks', require('./routes/artworks'));
 app.use('/api/bids', require('./routes/bids'));
+app.use('/api/auction', require('./routes/auction'));
+app.use('/api/watchlist', require('./routes/watchlist'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/upload', require('./routes/upload'));
 
@@ -124,5 +159,6 @@ require('./sockets/bidHandler')(io);
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
-  console.log(`Chitrakavyam server running on port ${PORT}`);
+  const scheme = USE_HTTPS ? 'https' : 'http';
+  console.log(`Chitrakavyam server running on ${scheme}://localhost:${PORT}`);
 });

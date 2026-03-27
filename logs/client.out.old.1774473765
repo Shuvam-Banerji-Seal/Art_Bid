@@ -1,0 +1,13 @@
+
+> client@0.0.0 dev
+> vite --host 0.0.0.0 --port 5173
+
+
+  VITE v8.0.2  ready in 581 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://10.20.74.136:5173/
+1:07:11 AM [vite] (client) hmr update /src/components/VirtualCanvas.jsx
+2:03:56 AM [vite] (client) hmr update /src/components/VirtualCanvas.jsx
+2:04:39 AM [vite] (client) hmr update /src/pages/admin/Dashboard.jsx
+2:04:45 AM [vite] (client) hmr update /src/pages/admin/Dashboard.jsx

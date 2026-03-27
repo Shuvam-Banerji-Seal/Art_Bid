@@ -1,23 +1,49 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useAuction } from '../hooks/useAuction';
 import CountdownTimer from '../components/CountdownTimer';
+import api from '../utils/api';
 import toast from 'react-hot-toast';
 
 export default function AuthPage() {
   const [tab, setTab] = useState('login');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [form, setForm] = useState({
     email: '', password: '', username: '', confirm_password: '',
     roll_number: '', contact_number: '',
   });
   const [loading, setLoading] = useState(false);
+  const [showcase, setShowcase] = useState([]);
+  const [showcaseIdx, setShowcaseIdx] = useState(0);
+  const [mobile, setMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 900 : false);
   const { login, signup } = useAuth();
   const { config, status } = useAuction();
   const navigate = useNavigate();
 
   const emailValid = form.email.endsWith('@iiserkol.ac.in');
   const emailTouched = form.email.length > 0;
+
+  useEffect(() => {
+    api.get('/artworks', { params: { status: 'approved_auction', sort: 'highest_bid' } })
+      .then(res => setShowcase((res.data || []).slice(0, 3)))
+      .catch(() => setShowcase([]));
+  }, []);
+
+  useEffect(() => {
+    if (showcase.length <= 1) return;
+    const timer = setInterval(() => {
+      setShowcaseIdx(prev => (prev + 1) % showcase.length);
+    }, 2600);
+    return () => clearInterval(timer);
+  }, [showcase]);
+
+  useEffect(() => {
+    const onResize = () => setMobile(window.innerWidth < 900);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -55,15 +81,43 @@ export default function AuthPage() {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div style={{ display: mobile ? 'block' : 'flex', minHeight: '100vh' }}>
       {/* Left panel */}
       <div style={{
-        flex: 1, background: 'linear-gradient(135deg, #1a1714 0%, #0f0e0d 100%)',
+        flex: 1,
+        background: 'linear-gradient(135deg, #1a1714 0%, #0f0e0d 100%)',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        padding: 48, borderRight: '1px solid var(--border)',
+        padding: mobile ? '28px 20px' : 48,
+        borderRight: mobile ? 'none' : '1px solid var(--border)',
+        borderBottom: mobile ? '1px solid var(--border)' : 'none',
+        position: 'relative',
+        overflow: 'hidden',
+        minHeight: mobile ? 280 : 'auto',
       }}>
+        {showcase.length > 0 && (
+          <>
+            <img
+              src={showcase[showcaseIdx]?.primary_image || showcase[showcaseIdx]?.fallback_image}
+              alt="showcase"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                opacity: 0.25,
+                transition: 'opacity 0.8s ease',
+                filter: 'grayscale(20%) saturate(90%)',
+              }}
+            />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(15,14,13,0.35), rgba(15,14,13,0.85))' }} />
+          </>
+        )}
         <div style={{ textAlign: 'center', maxWidth: 400 }}>
-          <div style={{ fontSize: 80, marginBottom: 24 }}>🎨</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 20 }}>
+            <img src="/assets/arts-club-logo.png" alt="Arts Club" style={{ height: 56, width: 'auto' }} />
+            <img src="/assets/iiser-logo.png" alt="IISER" style={{ height: 48, width: 'auto' }} />
+          </div>
           <h1 style={{ fontFamily: 'Cormorant Garamond', fontSize: 42, color: 'var(--accent-gold)', marginBottom: 16 }}>Chitrakavyam</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 16, lineHeight: 1.6, marginBottom: 32 }}>
             IISER Kolkata Arts Club&apos;s annual art festival — live auction bidding on exceptional works.
@@ -86,7 +140,7 @@ export default function AuthPage() {
       </div>
 
       {/* Right panel */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 48 }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: mobile ? '20px 16px 28px' : 48 }}>
         <div style={{ width: '100%', maxWidth: 420 }}>
           <h2 style={{ fontFamily: 'Cormorant Garamond', fontSize: 32, marginBottom: 8, color: 'var(--text-primary)' }}>
             {tab === 'login' ? 'Welcome back' : 'Join the auction'}
@@ -138,14 +192,48 @@ export default function AuthPage() {
 
             <div>
               <label style={{ fontSize: 13, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>Password *</label>
-              <input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="Min. 8 characters" required />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={e => setForm({ ...form, password: e.target.value })}
+                  placeholder="Min. 8 characters"
+                  required
+                  style={{ paddingRight: 88 }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  style={{ position: 'absolute', right: 6, top: 6, padding: '4px 8px', fontSize: 11 }}
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
             </div>
 
             {tab === 'signup' && (
               <>
                 <div>
                   <label style={{ fontSize: 13, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>Confirm Password *</label>
-                  <input type="password" value={form.confirm_password} onChange={e => setForm({ ...form, confirm_password: e.target.value })} placeholder="Repeat password" required />
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={form.confirm_password}
+                      onChange={e => setForm({ ...form, confirm_password: e.target.value })}
+                      placeholder="Repeat password"
+                      required
+                      style={{ paddingRight: 88 }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      style={{ position: 'absolute', right: 6, top: 6, padding: '4px 8px', fontSize: 11 }}
+                    >
+                      {showConfirmPassword ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div>

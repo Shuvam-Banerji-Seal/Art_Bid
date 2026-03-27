@@ -6,12 +6,17 @@ export default function UserManager() {
   const [users, setUsers] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [logins, setLogins] = useState([]);
 
   const load = async () => {
     try {
-      const res = await api.get('/admin/users', { params: { page, limit: 30 } });
-      setUsers(res.data.users || []);
-      setTotal(res.data.total || 0);
+      const [usersRes, loginsRes] = await Promise.all([
+        api.get('/admin/users', { params: { page, limit: 30 } }),
+        api.get('/admin/logins', { params: { limit: 20 } }),
+      ]);
+      setUsers(usersRes.data.users || []);
+      setTotal(usersRes.data.total || 0);
+      setLogins(loginsRes.data.logins || []);
     } catch (err) {
       console.error(err);
     }
@@ -30,7 +35,7 @@ export default function UserManager() {
   const toggleAdmin = async (id, isAdmin) => {
     try {
       await api.patch(`/admin/users/${id}`, { is_admin: !isAdmin });
-      toast.success(isAdmin ? 'Admin role removed' : 'User promoted to admin');
+      toast.success(isAdmin ? 'MasterAdmin role removed' : 'User promoted to MasterAdmin');
       load();
     } catch { toast.error('Failed to update user'); }
   };
@@ -60,7 +65,7 @@ export default function UserManager() {
                   <td style={{ padding: '10px 12px', color: 'var(--bid-green)' }}>{u.winning_bids}</td>
                   <td style={{ padding: '10px 12px' }}>
                     <span className={`badge ${u.is_admin ? 'badge-gold' : 'badge-muted'}`}>
-                      {u.is_admin ? 'Admin' : 'User'}
+                      {u.is_admin ? 'MasterAdmin' : 'User'}
                     </span>
                   </td>
                   <td style={{ padding: '10px 12px' }}>
@@ -74,7 +79,7 @@ export default function UserManager() {
                         {u.is_banned ? 'Unban' : 'Ban'}
                       </button>
                       <button className="btn btn-outline" onClick={() => toggleAdmin(u.id, u.is_admin)} style={{ padding: '4px 8px', fontSize: 11 }}>
-                        {u.is_admin ? '−Admin' : '+Admin'}
+                        {u.is_admin ? '−MasterAdmin' : '+MasterAdmin'}
                       </button>
                     </div>
                   </td>
@@ -89,6 +94,40 @@ export default function UserManager() {
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-outline" disabled={page === 1} onClick={() => setPage(p => p - 1)} style={{ padding: '6px 12px' }}>Prev</button>
           <button className="btn btn-outline" disabled={users.length < 30} onClick={() => setPage(p => p + 1)} style={{ padding: '6px 12px' }}>Next</button>
+        </div>
+      </div>
+
+      <div className="card" style={{ marginTop: 20, overflow: 'hidden' }}>
+        <div style={{ padding: 14, borderBottom: '1px solid var(--border)', fontFamily: 'Cormorant Garamond', fontSize: 22 }}>
+          Recent Login Fingerprints
+        </div>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border)' }}>
+                {['Time', 'User', 'Email', 'IP', 'Forwarded', 'User Agent', 'Result'].map(h => (
+                  <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: 'var(--text-muted)', fontWeight: 500 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {logins.map(item => (
+                <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td style={{ padding: '10px 12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{new Date(item.login_at).toLocaleString()}</td>
+                  <td style={{ padding: '10px 12px' }}>{item.username || (item.user_id ? `User #${item.user_id}` : 'Unknown')}</td>
+                  <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>{item.email || '—'}</td>
+                  <td style={{ padding: '10px 12px' }}>{item.ip_address || '—'}</td>
+                  <td style={{ padding: '10px 12px', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.forwarded_for || '—'}</td>
+                  <td style={{ padding: '10px 12px', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.user_agent || '—'}</td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <span className={`badge ${item.success ? 'badge-green' : 'badge-red'}`}>
+                      {item.success ? 'Success' : 'Failed'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

@@ -156,7 +156,8 @@ router.get('/:id/bids', async (req, res) => {
     const limit = isAdmin ? 1000 : 3;
     const result = await pool.query(`
       SELECT b.bid_amount, b.bid_time, b.is_voided,
-             CONCAT(LEFT(u.username, 1), '***', RIGHT(u.username, 1)) AS bidder_masked
+            u.id AS bidder_id,
+            u.username AS bidder_username
       FROM bids b
       JOIN users u ON u.id = b.bidder_id
       WHERE b.artwork_id = $1 AND b.is_voided = FALSE

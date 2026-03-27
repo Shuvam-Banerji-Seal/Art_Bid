@@ -5,12 +5,16 @@ import CountdownTimer from '../components/CountdownTimer';
 import Navbar from '../components/Navbar';
 import api from '../utils/api';
 import { useAuction } from '../hooks/useAuction';
+import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 export default function GalleryPage() {
   const [artworks, setArtworks] = useState([]);
+  const [watchlist, setWatchlist] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({ status: '', item_type: '', sort: '', search: '' });
   const { config, status } = useAuction();
+  const { user } = useAuth();
 
   const fetchArtworks = useCallback(async () => {
     try {
@@ -30,8 +34,36 @@ export default function GalleryPage() {
 
   useEffect(() => { fetchArtworks(); }, [fetchArtworks]);
 
+  useEffect(() => {
+    if (!user) return;
+    api.get('/watchlist')
+      .then(res => setWatchlist(new Set(res.data.map(w => w.artwork_id))))
+      .catch(() => {});
+  }, [user]);
+
+  const toggleWatchlist = async (artworkId, currentlyWatched) => {
+    try {
+      if (currentlyWatched) {
+        await api.delete(`/watchlist/${artworkId}`);
+        setWatchlist(prev => {
+          const next = new Set(prev);
+          next.delete(artworkId);
+          return next;
+        });
+        toast.success('Removed from watchlist');
+      } else {
+        await api.post('/watchlist', { artwork_id: artworkId });
+        setWatchlist(prev => new Set(prev).add(artworkId));
+        toast.success('Added to watchlist');
+      }
+    } catch {
+      toast.error('Failed to update watchlist');
+    }
+  };
+
   // WebSocket live updates
   useEffect(() => {
+    if (!user) return;
     const socket = io(import.meta.env.VITE_WS_URL || '', { withCredentials: true });
     socket.on('bid:new', ({ artworkId, newAmount, totalBids }) => {
       setArtworks(prev => prev.map(a =>
@@ -41,7 +73,7 @@ export default function GalleryPage() {
       ));
     });
     return () => socket.disconnect();
-  }, []);
+  }, [user]);
 
   const statusBannerColor = {
     live: 'rgba(76,175,130,0.1)',
@@ -131,11 +163,19 @@ export default function GalleryPage() {
           </div>
         ) : (
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: 24,
+            columnCount: 'var(--gallery-cols)',
+            columnGap: 24,
           }}>
-            {artworks.map(a => <ArtworkCard key={a.id} artwork={a} />)}
+            {artworks.map(a => (
+              <div key={a.id} style={{ breakInside: 'avoid', marginBottom: 24 }}>
+                <ArtworkCard
+                  artwork={a}
+                  canWatch={!!user}
+                  isWatched={watchlist.has(a.id)}
+                  onToggleWatch={toggleWatchlist}
+                />
+              </div>
+            ))}
           </div>
         )}
       </div>

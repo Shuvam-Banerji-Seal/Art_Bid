@@ -1,0 +1,14 @@
+
+> chitrakavyam-server@1.0.0 start
+> node index.js
+
+Chitrakavyam server running on port 3001
+Socket connected: Ux_WI_oJcLPjabK-AAAJ, user: 1
+Socket connected: HpQ12QzwUASE2gTpAAAK, user: 1
+Socket connected: 1Y3o94ZXIsnAY6O4AAAL, user: 1
+Socket disconnected: 1Y3o94ZXIsnAY6O4AAAL
+Socket disconnected: Ux_WI_oJcLPjabK-AAAJ
+Socket disconnected: HpQ12QzwUASE2gTpAAAK
+Socket connected: RsdjLcD5zXfEPiALAAAT, user: 1
+Socket connected: AUS7ZlZlK9vJVjZWAAAU, user: 1
+Socket connected: PAer5ErB2NTc3wy3AAAX, user: 1

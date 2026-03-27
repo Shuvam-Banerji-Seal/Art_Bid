@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
@@ -66,7 +65,7 @@ export default function AdminDashboard() {
   return (
     <div style={{ padding: 24 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
-        <h1 style={{ fontFamily: 'Cormorant Garamond', fontSize: 36 }}>Admin Dashboard</h1>
+        <h1 style={{ fontFamily: 'Cormorant Garamond', fontSize: 36 }}>MasterAdmin Dashboard</h1>
         <div style={{ display: 'flex', gap: 12 }}>
           <button className="btn btn-outline" onClick={togglePause}>
             {stats?.config?.is_paused ? '▶ Resume Auction' : '⏸ Pause Auction'}
@@ -88,12 +87,6 @@ export default function AdminDashboard() {
             <div style={{ fontFamily: 'Cormorant Garamond', fontSize: 36, color }}>{value}</div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{label}</div>
           </div>
-        ))}
-      </div>
-
-      <div style={{ display: 'flex', gap: 12, marginBottom: 28, flexWrap: 'wrap' }}>
-        {[['Artworks', '/admin/artworks'], ['Users', '/admin/users'], ['All Bids', '/admin/bids'], ['Auction Config', '/admin/config']].map(([label, path]) => (
-          <Link key={path} to={path}><button className="btn btn-outline">{label}</button></Link>
         ))}
       </div>
 

@@ -1,0 +1,37 @@
+
+> chitrakavyam-server@1.0.0 start
+> node index.js
+
+Chitrakavyam server running on https://localhost:3001
+Socket connected: WBQp02ubGine5JCaAAAC, user: 1
+Socket disconnected: WBQp02ubGine5JCaAAAC
+Socket connected: GZj5HW0Sh3nEL0lGAAAI, user: 1
+Socket disconnected: GZj5HW0Sh3nEL0lGAAAI
+Socket connected: -FkEpkxdJ5ybtQXBAAAL, user: 1
+Socket disconnected: -FkEpkxdJ5ybtQXBAAAL
+Socket connected: PVY2lkWgyuYqVioQAAAO, user: 1
+ValidationError: The 'X-Forwarded-For' header is set but the Express 'trust proxy' setting is false (default). This could indicate a misconfiguration which would prevent express-rate-limit from accurately identifying users. See https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/ for more information.
+    at Object.xForwardedForHeader (/home/shuvam/codes/Art_Bid/server/node_modules/express-rate-limit/dist/index.cjs:185:13)
+    at wrappedValidations.<computed> [as xForwardedForHeader] (/home/shuvam/codes/Art_Bid/server/node_modules/express-rate-limit/dist/index.cjs:397:22)
+    at Object.keyGenerator (/home/shuvam/codes/Art_Bid/server/node_modules/express-rate-limit/dist/index.cjs:658:20)
+    at /home/shuvam/codes/Art_Bid/server/node_modules/express-rate-limit/dist/index.cjs:710:32
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async /home/shuvam/codes/Art_Bid/server/node_modules/express-rate-limit/dist/index.cjs:691:5 {
+  code: 'ERR_ERL_UNEXPECTED_X_FORWARDED_FOR',
+  help: 'https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/'
+}
+Socket disconnected: PVY2lkWgyuYqVioQAAAO
+Socket connected: K88VpyfML7fZa1HFAAAV, user: 1
+Socket connected: qMxHtFl3h6eSWOEnAAAW, user: 1
+Socket connected: 6DSs45Pm1Gz4dTbbAAAX, user: 1
+Socket disconnected: qMxHtFl3h6eSWOEnAAAW
+Socket disconnected: K88VpyfML7fZa1HFAAAV
+Socket disconnected: 6DSs45Pm1Gz4dTbbAAAX
+Socket connected: N-iNBc1My2ZeFVNeAAAa, user: 1
+Socket disconnected: N-iNBc1My2ZeFVNeAAAa
+Socket connected: UCGTlBgLO4SeKM8wAAAd, user: 1
+Socket disconnected: UCGTlBgLO4SeKM8wAAAd
+Socket connected: gX5NfESc_GZqKMEpAAAf, user: 1
+Socket disconnected: gX5NfESc_GZqKMEpAAAf
+Socket connected: OaG_xQzvctAgo4pJAAAj, user: 1
+Socket disconnected: OaG_xQzvctAgo4pJAAAj

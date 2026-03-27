@@ -9,11 +9,12 @@ const signupLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { 
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: 'Too many login attempts' } });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'chitrakavyam_secret';
+const USE_HTTPS = process.env.USE_HTTPS === 'true';
 const COOKIE_OPTIONS = {
   httpOnly: true,
   sameSite: 'strict',
   maxAge: 7 * 24 * 60 * 60 * 1000,
-  secure: process.env.NODE_ENV === 'production',
+  secure: process.env.NODE_ENV === 'production' || USE_HTTPS,
 };
 
 function signToken(user) {
@@ -22,6 +23,18 @@ function signToken(user) {
     JWT_SECRET,
     { expiresIn: '7d' }
   );
+}
+
+async function recordLoginFingerprint({ userId = null, email = null, ipAddress = null, forwardedFor = null, userAgent = '', success = false }) {
+  try {
+    await pool.query(
+      `INSERT INTO login_fingerprints (user_id, email, ip_address, forwarded_for, user_agent, success)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [userId, email, ipAddress, forwardedFor, userAgent, success]
+    );
+  } catch (err) {
+    console.error('Login fingerprint log failed:', err.message);
+  }
 }
 
 // POST /api/auth/signup
@@ -67,9 +80,14 @@ router.post('/login', loginLimiter, async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
 
+  const forwardedFor = req.get('x-forwarded-for') || '';
+  const ipAddress = req.ip || req.connection?.remoteAddress || '';
+  const userAgent = req.get('User-Agent') || '';
+
   try {
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (result.rows.length === 0) {
+      await recordLoginFingerprint({ email, ipAddress, forwardedFor, userAgent, success: false });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -77,10 +95,12 @@ router.post('/login', loginLimiter, async (req, res) => {
 
     if (user.lockout_until && new Date(user.lockout_until) > new Date()) {
       const remaining = Math.ceil((new Date(user.lockout_until) - new Date()) / 60000);
+      await recordLoginFingerprint({ userId: user.id, email, ipAddress, forwardedFor, userAgent, success: false });
       return res.status(423).json({ error: `Account locked. Try again in ${remaining} minute(s)` });
     }
 
     if (user.is_banned) {
+      await recordLoginFingerprint({ userId: user.id, email, ipAddress, forwardedFor, userAgent, success: false });
       return res.status(403).json({ error: 'Your account has been suspended' });
     }
 
@@ -92,6 +112,7 @@ router.post('/login', loginLimiter, async (req, res) => {
         'UPDATE users SET failed_login_attempts = $1, lockout_until = $2 WHERE id = $3',
         [attempts, lockout, user.id]
       );
+      await recordLoginFingerprint({ userId: user.id, email, ipAddress, forwardedFor, userAgent, success: false });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -99,6 +120,7 @@ router.post('/login', loginLimiter, async (req, res) => {
 
     const token = signToken(user);
     res.cookie('token', token, COOKIE_OPTIONS);
+    await recordLoginFingerprint({ userId: user.id, email, ipAddress, forwardedFor, userAgent, success: true });
     res.json({ message: 'Login successful', user: { id: user.id, email: user.email, username: user.username, isAdmin: user.is_admin } });
   } catch (err) {
     console.error('Login error:', err);
@@ -108,7 +130,11 @@ router.post('/login', loginLimiter, async (req, res) => {
 
 // POST /api/auth/logout
 router.post('/logout', (req, res) => {
-  res.clearCookie('token');
+  res.clearCookie('token', {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: COOKIE_OPTIONS.secure,
+  });
   res.json({ message: 'Logged out successfully' });
 });
 

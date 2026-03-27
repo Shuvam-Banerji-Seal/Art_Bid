@@ -11,6 +11,8 @@ import ArtworkManager from './pages/admin/ArtworkManager';
 import BidLog from './pages/admin/BidLog';
 import UserManager from './pages/admin/UserManager';
 import AuctionConfig from './pages/admin/AuctionConfig';
+import VirtualCanvas from './components/VirtualCanvas';
+import AppFooter from './components/AppFooter';
 import './styles/globals.css';
 
 function PrivateRoute({ children }) {
@@ -24,6 +26,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <VirtualCanvas />
         <Toaster
           position="bottom-right"
           toastOptions={{
@@ -35,20 +38,25 @@ export default function App() {
             success: { iconTheme: { primary: 'var(--bid-green)', secondary: '#000' } },
           }}
         />
-        <Routes>
-          <Route path="/" element={<AuthPage />} />
-          <Route path="/gallery" element={<GalleryPage />} />
-          <Route path="/artwork/:id" element={<ArtworkPage />} />
-          <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="artworks" element={<ArtworkManager />} />
-            <Route path="bids" element={<BidLog />} />
-            <Route path="users" element={<UserManager />} />
-            <Route path="config" element={<AuctionConfig />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/gallery" />} />
-        </Routes>
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1 }}>
+            <Routes>
+              <Route path="/" element={<AuthPage />} />
+              <Route path="/gallery" element={<GalleryPage />} />
+              <Route path="/artwork/:id" element={<ArtworkPage />} />
+              <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+              <Route path="/masteradmin" element={<AdminLayout />}>
+                <Route index element={<Dashboard />} />
+                <Route path="artworks" element={<ArtworkManager />} />
+                <Route path="bids" element={<BidLog />} />
+                <Route path="users" element={<UserManager />} />
+                <Route path="config" element={<AuctionConfig />} />
+              </Route>
+              <Route path="*" element={<Navigate to="/gallery" />} />
+            </Routes>
+          </div>
+          <AppFooter />
+        </div>
       </BrowserRouter>
     </AuthProvider>
   );

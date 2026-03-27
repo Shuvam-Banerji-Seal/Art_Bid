@@ -1,183 +1,281 @@
-# Chitrakavyam — Live Bidding Platform
+# Chitrakavyam Live Bidding Platform
 
-Full-stack live auction platform for **IISER Kolkata Arts Club's Chitrakavyam art festival**. Restricted exclusively to `@iiserkol.ac.in` email holders.
+Live art auction platform for IISER Kolkata Arts Club.
 
-## Tech Stack
+## What this project includes
+- Node.js + Express backend with PostgreSQL
+- React + Vite frontend
+- Real-time updates with Socket.IO
+- Admin panel for artworks, users, bids, config, and login fingerprints
+- CSV import, image uploads, watchlist, anti-sniping logic, and audit logging
 
-| Layer | Technology |
-|---|---|
-| Backend | Node.js + Express |
-| Database | PostgreSQL |
-| Auth | JWT (HTTP-only cookies) + bcrypt |
-| Real-time | Socket.io (WebSockets) |
-| File Uploads | Multer (local storage) |
-| Frontend | React + Vite |
-
-## Project Structure
-
-```
-chitrakavyam/
-├── server/          # Express backend
-│   ├── db/          # Pool + SQL migrations
-│   ├── routes/      # auth, artworks, bids, admin, upload
-│   ├── middleware/  # JWT auth + adminGuard
-│   ├── sockets/     # Socket.io bid handler
-│   └── utils/       # CSV import + bid validator
-├── client/          # React frontend
-│   └── src/
-│       ├── pages/   # Auth, Gallery, Artwork, Profile, Admin
-│       ├── components/
-│       ├── hooks/
-│       ├── context/
-│       └── styles/
-└── uploads/         # Local image storage
-```
-
-## Quick Start
-
-### Prerequisites
+## System Requirements
+- Linux (Arch, Ubuntu/Debian, Fedora tested paths below)
 - Node.js 18+
+- npm 9+
 - PostgreSQL 14+
 
-### 1. Database Setup
+## 1. Install Dependencies (Linux)
 
+### Arch Linux
 ```bash
-# Create database
-psql -U postgres -c "CREATE DATABASE chitrakavyam;"
-
-# Run migrations
-psql -U postgres -d chitrakavyam < server/db/migrations/001_init.sql
+sudo pacman -Syu
+sudo pacman -S nodejs npm postgresql
 ```
 
-### 2. Server Setup
-
+### Ubuntu / Debian
 ```bash
-cd server
-cp .env.example .env
-# Edit .env: set DATABASE_URL, JWT_SECRET
-
-npm install
-npm start         # production
-npm run dev       # development (nodemon)
+sudo apt update
+sudo apt install -y curl gnupg ca-certificates
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs postgresql postgresql-contrib
 ```
 
-### 3. Client Setup
-
+### Fedora
 ```bash
-cd client
-cp .env.example .env
-# VITE_API_URL=/api (default, uses Vite proxy)
-
-npm install
-npm run dev       # development (http://localhost:5173)
-npm run build     # production build → dist/
+sudo dnf upgrade --refresh
+sudo dnf install -y nodejs npm postgresql-server postgresql
 ```
 
-### 4. Production Deployment
+## 2. Initialize PostgreSQL
 
+### If using system PostgreSQL service
+
+#### Arch Linux
 ```bash
-# Build React frontend
-cd client && npm run build
-
-# The Express server serves /client/dist as static files in production
-# Set NODE_ENV=production in server/.env
-
-# PM2 process management
-cd server
-pm2 start index.js --name chitrakavyam
-pm2 save && pm2 startup
+sudo -u postgres initdb -D /var/lib/postgres/data
+sudo systemctl enable --now postgresql
 ```
 
-## Environment Variables
-
-### server/.env
+#### Ubuntu / Debian
+Service is usually initialized automatically:
+```bash
+sudo systemctl enable --now postgresql
 ```
-DATABASE_URL=postgresql://postgres:password@localhost:5432/chitrakavyam
-JWT_SECRET=your_very_long_random_secret_here_minimum_32_chars
+
+#### Fedora
+```bash
+sudo postgresql-setup --initdb
+sudo systemctl enable --now postgresql
+```
+
+Verify:
+```bash
+pg_isready -h localhost -p 5432
+```
+
+### If you do not want system service (user-local PostgreSQL)
+From project root:
+```bash
+mkdir -p .local-pg
+initdb -D .local-pg
+pg_ctl -D .local-pg -l .local-pg/postgres.log -o "-p 5432 -k $(pwd)/.local-pg" start
+```
+
+## 3. Create DB User, Database, and Privileges
+
+Run as postgres superuser:
+```bash
+sudo -u postgres psql
+```
+
+Inside psql:
+```sql
+CREATE ROLE chitra_user WITH LOGIN PASSWORD 'change_me_strong_password';
+CREATE DATABASE chitrakavyam OWNER chitra_user;
+GRANT ALL PRIVILEGES ON DATABASE chitrakavyam TO chitra_user;
+\c chitrakavyam
+GRANT ALL ON SCHEMA public TO chitra_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO chitra_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO chitra_user;
+```
+
+If you are using your own Linux user instead of `chitra_user`, set the connection string accordingly.
+
+## 4. Clone and Install Project
+```bash
+git clone <your-repo-url>
+cd Art_Bid
+
+cd server && npm install
+cd ../client && npm install
+cd ..
+```
+
+## 5. Configure Environment Files
+
+### `server/.env`
+Create from example:
+```bash
+cp server/.env.example server/.env
+```
+
+Recommended development content:
+```env
+DATABASE_URL=postgresql://chitra_user:change_me_strong_password@localhost:5432/chitrakavyam
+JWT_SECRET=replace_with_long_random_secret_at_least_32_chars
 PORT=3001
-CLIENT_URL=http://localhost:5173
+CLIENT_URLS=http://localhost:5173,http://<YOUR_LAN_IP>:5173
 NODE_ENV=development
 ```
 
-### client/.env
+### `client/.env`
+```bash
+cp client/.env.example client/.env
 ```
+
+```env
 VITE_API_URL=/api
 VITE_WS_URL=
 ```
 
-## API Endpoints
+## 6. Run Migrations
+From project root:
+```bash
+psql "$DATABASE_URL" -f server/db/migrations/001_init.sql
+psql "$DATABASE_URL" -f server/db/migrations/002_fix_auction_state_trigger.sql
+psql "$DATABASE_URL" -f server/db/migrations/003_login_fingerprint.sql
+```
+
+If `DATABASE_URL` is not exported in shell:
+```bash
+psql -h localhost -U chitra_user -d chitrakavyam -f server/db/migrations/001_init.sql
+psql -h localhost -U chitra_user -d chitrakavyam -f server/db/migrations/002_fix_auction_state_trigger.sql
+psql -h localhost -U chitra_user -d chitrakavyam -f server/db/migrations/003_login_fingerprint.sql
+```
+
+## 7. Seed Sample Data (recommended for testing)
+```bash
+cd server
+npm run seed:sample
+```
+This is a clean slate initialization script. It truncates existing database tables and creates the main admin account.
+
+Default seeded accounts:
+- Admin: `artmaster@iiserkol.ac.in` / `master001`
+
+## 8. Start the Application
+
+### Terminal 1 (backend)
+```bash
+cd server
+npm run dev
+```
+Backend URL: `http://localhost:3001`
+
+### Terminal 2 (frontend)
+```bash
+cd client
+npm run dev -- --host 0.0.0.0 --port 5173
+```
+Frontend URLs:
+- Local: `http://localhost:5173`
+- Intranet: `http://<YOUR_LAN_IP>:5173`
+
+## 9. Admin User Creation (manual method)
+If you signed up normally and want to promote an account:
+```sql
+UPDATE users SET is_admin = TRUE WHERE email = 'yourname@iiserkol.ac.in';
+```
+
+## 10. Intranet Access Checklist
+- Frontend must run with `--host 0.0.0.0`
+- Backend `CLIENT_URLS` must include LAN URL
+- Ports must be open in firewall
+
+Example (ufw):
+```bash
+sudo ufw allow 3001/tcp
+sudo ufw allow 5173/tcp
+```
+
+## 11. Useful Commands
+
+### Backend tests
+```bash
+cd server
+npm test
+```
+
+### Frontend tests
+```bash
+cd client
+npm test
+```
+
+### Frontend production build
+```bash
+cd client
+npm run build
+```
+
+### Stop user-local PostgreSQL cluster
+```bash
+pg_ctl -D .local-pg stop
+```
+
+## API Summary
 
 ### Auth
-- `POST /api/auth/signup` — Register with @iiserkol.ac.in email
-- `POST /api/auth/login` — Login (rate limited, lockout after 5 failures)
-- `POST /api/auth/logout` — Clear session cookie
-- `GET /api/auth/me` — Current user profile
-- `PATCH /api/auth/profile` — Update profile
+- `POST /api/auth/signup`
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+- `PATCH /api/auth/profile`
 
-### Artworks
-- `GET /api/artworks` — List artworks (with filters, sorting)
-- `GET /api/artworks/:id` — Artwork details with images
-- `GET /api/artworks/:id/bids` — Bid history (top 3 public, full for admin)
-- `POST /api/artworks` — Create artwork (admin)
-- `PATCH /api/artworks/:id` — Update artwork (admin)
-- `DELETE /api/artworks/:id` — Soft-delete artwork (admin)
+### Public auction/artworks
+- `GET /api/auction/config`
+- `GET /api/artworks`
+- `GET /api/artworks/:id`
+- `GET /api/artworks/:id/bids`
 
-### Bids
-- `POST /api/bids` — Place a bid (authenticated)
-- `GET /api/bids/my` — User's bid history
+### Bidding
+- `POST /api/bids`
+- `GET /api/bids/my`
 
-### Admin (requires admin JWT)
-- `GET /api/admin/stats` — Dashboard statistics
-- `GET /api/admin/artworks` — All artworks including pending
-- `GET /api/admin/bids` — Full bid log
-- `DELETE /api/admin/bids/:id` — Void a bid (recalculates winner)
-- `GET /api/admin/users` — User management
-- `PATCH /api/admin/users/:id` — Ban/promote user
-- `GET /api/admin/config` — Auction configuration
-- `POST /api/admin/config` — Update auction config
-- `GET /api/admin/winners` — Export winning bids
-- `GET /api/admin/audit` — Admin audit log
-- `POST /api/admin/import-csv` — Import Google Form CSV
+### Watchlist
+- `GET /api/watchlist`
+- `POST /api/watchlist`
+- `DELETE /api/watchlist/:artworkId`
 
-### Upload (admin only)
-- `POST /api/upload/artwork/:id/images` — Upload artwork images
-- `DELETE /api/upload/images/:imageId` — Delete image
-- `PATCH /api/upload/images/:imageId` — Set primary / reorder
+### Admin
+- `GET /api/admin/stats`
+- `GET /api/admin/artworks`
+- `GET /api/admin/bids`
+- `DELETE /api/admin/bids/:id`
+- `GET /api/admin/users`
+- `PATCH /api/admin/users/:id`
+- `GET /api/admin/logins`
+- `GET /api/admin/config`
+- `POST /api/admin/config`
+- `GET /api/admin/winners`
+- `GET /api/admin/audit`
+- `POST /api/admin/import-csv`
 
-## WebSocket Events
+## Troubleshooting
 
-### Server → Client
-| Event | Payload |
-|---|---|
-| `bid:new` | `{ artworkId, newAmount, bidderMasked, totalBids, timestamp }` |
-| `bid:youOutbid` | `{ artworkId, artworkTitle }` (to displaced winner only) |
-| `auction:pause` | `{ reason }` |
-| `auction:resume` | `{}` |
-| `auction:config` | `{ newEndTime, newMinIncrement }` |
-
-### Client → Server
-| Event | Payload |
-|---|---|
-| `subscribe:artwork` | `{ artworkId }` |
-| `unsubscribe:artwork` | `{ artworkId }` |
-
-## Key Features
-
-- **@iiserkol.ac.in only** — Enforced at DB (CHECK constraint), API, and frontend
-- **Live bidding** — WebSocket updates within ~100ms for all connected clients
-- **Anti-sniping** — Last-minute bid (within 5 min of close) extends auction by 5 min
-- **Bid confirmation modal** — Prevents accidental bids
-- **Rate limiting** — Max 1 bid per user per artwork per 5 seconds
-- **Brute-force protection** — Account lockout after 5 failed login attempts
-- **Admin audit log** — Every admin action logged with timestamp
-- **CSV import** — Bulk import from Google Form submissions
-- **Winner export** — One-click CSV of all winning bids for payment collection
-- **Soft deletes** — Artworks use `deleted_at` pattern, nothing permanently lost
-
-## Creating the First Admin User
-
-After signup, promote yourself to admin directly in PostgreSQL:
-
-```sql
-UPDATE users SET is_admin = TRUE WHERE email = 'your@iiserkol.ac.in';
+### `EADDRINUSE` on 3001 or 5173
+Another process is using the port.
+```bash
+fuser -k 3001/tcp
+fuser -k 5173/tcp
 ```
+
+### CORS error from intranet device
+- Confirm frontend URL is in `CLIENT_URLS`
+- Restart backend after env changes
+
+### Cookies not being set
+- Ensure frontend calls backend with credentials enabled (already configured)
+- Keep `NODE_ENV=development` for local non-https sessions
+
+### PostgreSQL permission denied
+Recheck owner/privileges for `chitra_user` and schema grants.
+
+## Production Notes
+- Build frontend and serve via backend static mode (`NODE_ENV=production`)
+- Use reverse proxy (Nginx sample in `ops/nginx.chitrakavyam.conf`)
+- Run periodic backups (`ops/backup_db.sh`)
+
+## Credits
+Developed by [Shuvam Banerji Seal](https://shuvam-banerji-seal.github.io/).

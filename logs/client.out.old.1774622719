@@ -1,0 +1,10 @@
+
+> client@0.0.0 dev
+> vite --host 0.0.0.0 --port 5173
+
+
+  VITE v8.0.2  ready in 1023 ms
+
+  ➜  Local:   https://localhost:5173/
+  ➜  Local:   https://masterr:5173/
+  ➜  Network: https://10.20.74.136:5173/

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
-export default function ArtworkCard({ artwork, onBidUpdate }) {
+export default function ArtworkCard({ artwork, onBidUpdate, canWatch = false, isWatched = false, onToggleWatch }) {
   const [pulsing, setPulsing] = useState(false);
   const imageUrl = artwork.primary_image || artwork.fallback_image;
 
@@ -35,6 +35,49 @@ export default function ArtworkCard({ artwork, onBidUpdate }) {
       >
         {/* Image */}
         <div style={{ height: 220, background: '#111', overflow: 'hidden', position: 'relative' }}>
+          {canWatch && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleWatch?.(artwork.id, isWatched);
+              }}
+              title={isWatched ? 'Remove from watchlist' : 'Add to watchlist'}
+              style={{
+                position: 'absolute',
+                left: 10,
+                top: 10,
+                zIndex: 2,
+                width: 34,
+                height: 34,
+                borderRadius: '50%',
+                border: '1px solid var(--border)',
+                background: 'rgba(15,14,13,0.8)',
+                color: isWatched ? 'var(--accent-gold)' : 'var(--text-muted)',
+                cursor: 'pointer',
+                fontSize: 16,
+              }}
+            >
+              {isWatched ? '★' : '☆'}
+            </button>
+          )}
+
+          <div style={{
+            position: 'absolute',
+            left: canWatch ? 52 : 10,
+            top: 10,
+            zIndex: 2,
+          }}>
+            <span className={`badge ${
+              artwork.status === 'approved_auction' ? 'badge-gold'
+                : artwork.status === 'approved_exhibit' ? 'badge-muted'
+                  : artwork.status === 'pending' ? 'badge-red'
+                    : 'badge-muted'
+            }`}>
+              {artwork.status === 'approved_auction' ? 'Auction' : artwork.status === 'approved_exhibit' ? 'Exhibit' : artwork.status}
+            </span>
+          </div>
+
           {imageUrl ? (
             <img src={imageUrl} alt={artwork.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (

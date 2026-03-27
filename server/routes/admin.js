@@ -94,7 +94,8 @@ router.delete('/bids/:id', async (req, res) => {
       global.io.to(`artwork:${artwork_id}`).emit('bid:new', {
         artworkId: artwork_id,
         newAmount: stateResult.rows[0]?.current_highest_bid || 0,
-        bidderMasked: null,
+        bidderName: null,
+        bidderId: null,
         totalBids: stateResult.rows[0]?.total_bids || 0,
         timestamp: new Date(),
         voided: true,
@@ -133,6 +134,38 @@ router.get('/users', async (req, res) => {
   } catch (err) {
     console.error('Error fetching users:', err);
     res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+// GET /api/admin/logins
+router.get('/logins', async (req, res) => {
+  const { page = 1, limit = 50, user_id } = req.query;
+  const offset = (Number(page) - 1) * Number(limit);
+
+  try {
+    let where = 'WHERE 1=1';
+    const params = [];
+    if (user_id) {
+      where += ` AND lf.user_id = $${params.length + 1}`;
+      params.push(Number(user_id));
+    }
+
+    const rows = await pool.query(
+      `SELECT lf.id, lf.user_id, lf.email, lf.ip_address, lf.forwarded_for, lf.user_agent, lf.success, lf.login_at,
+              u.username
+       FROM login_fingerprints lf
+       LEFT JOIN users u ON u.id = lf.user_id
+       ${where}
+       ORDER BY lf.login_at DESC
+       LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      [...params, Number(limit), offset]
+    );
+
+    const count = await pool.query(`SELECT COUNT(*) FROM login_fingerprints lf ${where}`, params);
+    res.json({ logins: rows.rows, total: Number(count.rows[0].count) });
+  } catch (err) {
+    console.error('Error fetching login fingerprints:', err);
+    res.status(500).json({ error: 'Failed to fetch login fingerprints' });
   }
 });
 
@@ -210,13 +243,15 @@ router.post('/config', async (req, res) => {
 
 // GET /api/admin/artworks (all including pending)
 router.get('/artworks', async (req, res) => {
-  const { page = 1, limit = 50, status, item_type } = req.query;
+  const { page = 1, limit = 50, status, item_type, min_price, max_price } = req.query;
   const offset = (page - 1) * limit;
   try {
     let where = 'WHERE a.deleted_at IS NULL';
     const params = [];
     if (status) { where += ` AND a.status = $${params.length + 1}`; params.push(status); }
     if (item_type) { where += ` AND a.item_type = $${params.length + 1}`; params.push(item_type); }
+    if (min_price !== undefined && min_price !== '') { where += ` AND COALESCE(a.base_price, 0) >= $${params.length + 1}`; params.push(Number(min_price)); }
+    if (max_price !== undefined && max_price !== '') { where += ` AND COALESCE(a.base_price, 0) <= $${params.length + 1}`; params.push(Number(max_price)); }
 
     const result = await pool.query(`
       SELECT a.*, ast.current_highest_bid, ast.total_bids,
