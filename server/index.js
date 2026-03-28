@@ -14,6 +14,12 @@ const USE_HTTPS = process.env.USE_HTTPS === 'true';
 const SSL_CERT_PATH = process.env.SSL_CERT_PATH;
 const SSL_KEY_PATH = process.env.SSL_KEY_PATH;
 
+// Hosted platforms (like Render) sit behind a reverse proxy.
+// Trust first proxy so rate limiting and origin/ip checks behave correctly.
+if (process.env.RENDER === 'true' || process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 let server;
 if (USE_HTTPS) {
   if (!SSL_CERT_PATH || !SSL_KEY_PATH) {
