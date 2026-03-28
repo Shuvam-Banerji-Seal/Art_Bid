@@ -16,10 +16,21 @@ KEY_FILE="$CERT_DIR/dev-key.pem"
 BACKEND_PORT="${BACKEND_PORT:-3001}"
 FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 USE_HTTPS="${USE_HTTPS:-true}"
+PUBLIC_HOST="${PUBLIC_HOST:-}"
+PUBLIC_SCHEME="${PUBLIC_SCHEME:-}"
+PUBLIC_PORT="${PUBLIC_PORT:-}"
 PROTOCOL="http"
 
 if [[ "$USE_HTTPS" == "true" ]]; then
   PROTOCOL="https"
+fi
+
+if [[ -z "$PUBLIC_SCHEME" ]]; then
+  PUBLIC_SCHEME="$PROTOCOL"
+fi
+
+if [[ -z "$PUBLIC_PORT" ]]; then
+  PUBLIC_PORT="$FRONTEND_PORT"
 fi
 
 mkdir -p "$LOG_DIR"
@@ -107,6 +118,10 @@ start_backend() {
     client_urls="http://localhost:${FRONTEND_PORT},http://${lan_ip}:${FRONTEND_PORT}"
   fi
 
+  if [[ -n "$PUBLIC_HOST" ]]; then
+    client_urls="${client_urls},${PUBLIC_SCHEME}://${PUBLIC_HOST}:${PUBLIC_PORT},${PUBLIC_SCHEME}://${PUBLIC_HOST}"
+  fi
+
   (
     cd "$SERVER_DIR"
     nohup env \
@@ -182,6 +197,10 @@ print_urls() {
   echo "Frontend URLs:"
   echo "  Localhost: ${PROTOCOL}://localhost:${FRONTEND_PORT}"
   echo "  Intranet:  ${PROTOCOL}://${lan_ip}:${FRONTEND_PORT}"
+  if [[ -n "$PUBLIC_HOST" ]]; then
+    echo "  Public:    ${PUBLIC_SCHEME}://${PUBLIC_HOST}:${PUBLIC_PORT}"
+    echo "  Public (default): ${PUBLIC_SCHEME}://${PUBLIC_HOST}"
+  fi
   echo
   echo "Logs:"
   echo "  Backend: $SERVER_LOG"

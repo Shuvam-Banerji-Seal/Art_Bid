@@ -1,0 +1,14 @@
+[Unit]
+Description=No-IP Dynamic Update Client
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/default/noip-duc
+ExecStart=/usr/local/bin/noip-duc
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
