@@ -168,6 +168,17 @@ start_backend() {
     client_urls="${client_urls},${PUBLIC_SCHEME}://${PUBLIC_HOST}:${PUBLIC_PORT},${PUBLIC_SCHEME}://${PUBLIC_HOST}"
   fi
 
+  if [[ "$IS_RENDER" == "true" ]]; then
+    echo "Render mode detected: starting backend in foreground..."
+    cd "$SERVER_DIR"
+    exec env \
+      USE_HTTPS="$USE_HTTPS" \
+      SSL_CERT_PATH="$CERT_FILE" \
+      SSL_KEY_PATH="$KEY_FILE" \
+      CLIENT_URLS="$client_urls" \
+      npm run start
+  fi
+
   (
     cd "$SERVER_DIR"
     nohup env \
