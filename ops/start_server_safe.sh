@@ -13,9 +13,20 @@ CLIENT_LOG="$LOG_DIR/client.out"
 CERT_FILE="$CERT_DIR/dev-cert.pem"
 KEY_FILE="$CERT_DIR/dev-key.pem"
 
-BACKEND_PORT="${BACKEND_PORT:-3001}"
+BACKEND_PORT="${BACKEND_PORT:-${PORT:-3001}}"
 FRONTEND_PORT="${FRONTEND_PORT:-5173}"
-USE_HTTPS="${USE_HTTPS:-true}"
+IS_RENDER="false"
+if [[ "${RENDER:-}" == "true" || -n "${RENDER_SERVICE_ID:-}" || -n "${RENDER_EXTERNAL_URL:-}" ]]; then
+  IS_RENDER="true"
+fi
+
+if [[ "$IS_RENDER" == "true" ]]; then
+  # Render terminates TLS at the edge; app should typically run plain HTTP internally.
+  USE_HTTPS="${USE_HTTPS:-false}"
+else
+  USE_HTTPS="${USE_HTTPS:-true}"
+fi
+
 PUBLIC_HOST="${PUBLIC_HOST:-}"
 PUBLIC_SCHEME="${PUBLIC_SCHEME:-}"
 PUBLIC_PORT="${PUBLIC_PORT:-}"
@@ -34,6 +45,32 @@ if [[ -z "$PUBLIC_PORT" ]]; then
 fi
 
 mkdir -p "$LOG_DIR"
+
+ensure_render_database_url() {
+  if [[ "$IS_RENDER" != "true" ]]; then
+    return 0
+  fi
+
+  if [[ -z "${DATABASE_URL:-}" ]]; then
+    echo "DATABASE_URL is not set."
+    echo "Set DATABASE_URL in Render environment variables before starting the app."
+    exit 1
+  fi
+
+  # Render Postgres external connections generally require SSL.
+  if [[ "$DATABASE_URL" == *"render.com"* && "$DATABASE_URL" != *"sslmode="* ]]; then
+    if [[ "$DATABASE_URL" == *"?"* ]]; then
+      export DATABASE_URL="${DATABASE_URL}&sslmode=require"
+    else
+      export DATABASE_URL="${DATABASE_URL}?sslmode=require"
+    fi
+    echo "DATABASE_URL updated with sslmode=require for Render Postgres."
+  fi
+
+  if [[ -z "${NODE_ENV:-}" ]]; then
+    export NODE_ENV="production"
+  fi
+}
 
 get_lan_ip() {
   local ip
@@ -112,7 +149,16 @@ start_backend() {
   echo "Starting backend in background..."
   local lan_ip="$1"
   local client_urls
-  if [[ "$USE_HTTPS" == "true" ]]; then
+
+  if [[ -n "${CLIENT_URLS:-}" ]]; then
+    client_urls="$CLIENT_URLS"
+  elif [[ "$IS_RENDER" == "true" ]]; then
+    if [[ -n "${RENDER_EXTERNAL_URL:-}" ]]; then
+      client_urls="$RENDER_EXTERNAL_URL"
+    else
+      client_urls="http://localhost:${BACKEND_PORT}"
+    fi
+  elif [[ "$USE_HTTPS" == "true" ]]; then
     client_urls="https://localhost:${FRONTEND_PORT},https://${lan_ip}:${FRONTEND_PORT},http://localhost:${FRONTEND_PORT},http://${lan_ip}:${FRONTEND_PORT}"
   else
     client_urls="http://localhost:${FRONTEND_PORT},http://${lan_ip}:${FRONTEND_PORT}"
@@ -145,6 +191,12 @@ start_backend() {
 }
 
 start_frontend() {
+  if [[ "$IS_RENDER" == "true" ]]; then
+    echo "Render mode detected: skipping frontend start (deploy frontend separately if needed)."
+    rm -f "$CLIENT_PID_FILE"
+    return 0
+  fi
+
   echo "Starting frontend in background..."
   (
     cd "$CLIENT_DIR"
@@ -191,40 +243,70 @@ print_urls() {
 
   echo
   echo "Startup complete (${PROTOCOL^^})."
-  echo "Backend URLs:"
-  echo "  Localhost: ${PROTOCOL}://localhost:${BACKEND_PORT}"
-  echo "  Intranet:  ${PROTOCOL}://${lan_ip}:${BACKEND_PORT}"
-  echo "Frontend URLs:"
-  echo "  Localhost: ${PROTOCOL}://localhost:${FRONTEND_PORT}"
-  echo "  Intranet:  ${PROTOCOL}://${lan_ip}:${FRONTEND_PORT}"
-  if [[ -n "$PUBLIC_HOST" ]]; then
-    echo "  Public:    ${PUBLIC_SCHEME}://${PUBLIC_HOST}:${PUBLIC_PORT}"
-    echo "  Public (default): ${PUBLIC_SCHEME}://${PUBLIC_HOST}"
+
+  if [[ "$IS_RENDER" == "true" ]]; then
+    echo "Backend URL:"
+    if [[ -n "${RENDER_EXTERNAL_URL:-}" ]]; then
+      echo "  Public: ${RENDER_EXTERNAL_URL}"
+    else
+      echo "  Internal: http://localhost:${BACKEND_PORT}"
+    fi
+  else
+    echo "Backend URLs:"
+    echo "  Localhost: ${PROTOCOL}://localhost:${BACKEND_PORT}"
+    echo "  Intranet:  ${PROTOCOL}://${lan_ip}:${BACKEND_PORT}"
+    echo "Frontend URLs:"
+    echo "  Localhost: ${PROTOCOL}://localhost:${FRONTEND_PORT}"
+    echo "  Intranet:  ${PROTOCOL}://${lan_ip}:${FRONTEND_PORT}"
+    if [[ -n "$PUBLIC_HOST" ]]; then
+      echo "  Public:    ${PUBLIC_SCHEME}://${PUBLIC_HOST}:${PUBLIC_PORT}"
+      echo "  Public (default): ${PUBLIC_SCHEME}://${PUBLIC_HOST}"
+    fi
   fi
+
   echo
   echo "Logs:"
   echo "  Backend: $SERVER_LOG"
-  echo "  Frontend: $CLIENT_LOG"
-  if [[ "$USE_HTTPS" == "true" ]]; then
+  if [[ "$IS_RENDER" != "true" ]]; then
+    echo "  Frontend: $CLIENT_LOG"
+  fi
+  if [[ "$USE_HTTPS" == "true" && "$IS_RENDER" != "true" ]]; then
     echo "TLS certificate: $CERT_FILE"
     echo "TLS private key: $KEY_FILE"
   fi
 }
 
+ensure_render_database_url
+
 # Preflight: verify DB is reachable, but never stop/restart DB from this script.
-if ! pg_isready -h localhost -p 5432 >/dev/null 2>&1; then
-  echo "PostgreSQL is not reachable at localhost:5432."
-  echo "For DB safety, this script will not modify DB processes."
-  echo "Start PostgreSQL first, then rerun this script."
-  exit 1
+if [[ "$IS_RENDER" == "true" ]]; then
+  if command -v pg_isready >/dev/null 2>&1; then
+    if ! pg_isready -d "$DATABASE_URL" >/dev/null 2>&1; then
+      echo "Warning: database did not report ready via pg_isready."
+      echo "Continuing startup; backend will log DB connectivity issues if any."
+    fi
+  else
+    echo "pg_isready not found; skipping DB readiness probe in Render mode."
+  fi
+else
+  if ! pg_isready -h localhost -p 5432 >/dev/null 2>&1; then
+    echo "PostgreSQL is not reachable at localhost:5432."
+    echo "For DB safety, this script will not modify DB processes."
+    echo "Start PostgreSQL first, then rerun this script."
+    exit 1
+  fi
 fi
 
 stop_pid_from_file "$SERVER_PID_FILE" "backend"
-stop_pid_from_file "$CLIENT_PID_FILE" "frontend"
+if [[ "$IS_RENDER" != "true" ]]; then
+  stop_pid_from_file "$CLIENT_PID_FILE" "frontend"
+fi
 stop_stale_processes
 
 rotate_log "$SERVER_LOG"
-rotate_log "$CLIENT_LOG"
+if [[ "$IS_RENDER" != "true" ]]; then
+  rotate_log "$CLIENT_LOG"
+fi
 
 ensure_https_cert
 LAN_IP="$(get_lan_ip)"
