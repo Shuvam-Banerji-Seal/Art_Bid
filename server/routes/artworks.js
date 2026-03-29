@@ -31,8 +31,21 @@ router.get('/', async (req, res) => {
       SELECT a.id, a.title, a.artist_name, a.item_type, a.auction_or_exhibit, a.status,
              a.base_price, a.medium, a.dimensions, a.is_framed, a.description,
              ast.current_highest_bid, ast.total_bids, ast.last_bid_at,
-             (SELECT image_path FROM artwork_images WHERE artwork_id = a.id AND is_primary = TRUE LIMIT 1) AS primary_image,
-             (SELECT image_path FROM artwork_images WHERE artwork_id = a.id ORDER BY display_order LIMIT 1) AS fallback_image
+            (SELECT CASE
+             WHEN ai.image_path ~ '^https?://' AND ai.image_data IS NULL THEN ai.image_path
+             ELSE '/api/upload/images/' || ai.id || '/content'
+          END
+        FROM artwork_images ai
+        WHERE ai.artwork_id = a.id AND ai.is_primary = TRUE
+        LIMIT 1) AS primary_image,
+            (SELECT CASE
+             WHEN ai.image_path ~ '^https?://' AND ai.image_data IS NULL THEN ai.image_path
+             ELSE '/api/upload/images/' || ai.id || '/content'
+          END
+        FROM artwork_images ai
+        WHERE ai.artwork_id = a.id
+        ORDER BY ai.display_order
+        LIMIT 1) AS fallback_image
       FROM artworks a
       LEFT JOIN auction_state ast ON ast.artwork_id = a.id
       ${whereClause}
@@ -61,7 +74,16 @@ router.get('/:id', async (req, res) => {
     if (artworkResult.rows.length === 0) return res.status(404).json({ error: 'Artwork not found' });
 
     const imagesResult = await pool.query(
-      'SELECT id, image_path, is_primary, display_order FROM artwork_images WHERE artwork_id = $1 ORDER BY display_order',
+      `SELECT id,
+              CASE
+                WHEN image_path ~ '^https?://' AND image_data IS NULL THEN image_path
+                ELSE '/api/upload/images/' || id || '/content'
+              END AS image_path,
+              is_primary,
+              display_order
+       FROM artwork_images
+       WHERE artwork_id = $1
+       ORDER BY display_order`,
       [id]
     );
 

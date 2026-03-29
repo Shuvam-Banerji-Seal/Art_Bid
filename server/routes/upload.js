@@ -1,9 +1,72 @@
 const express = require('express');
 const multer = require('multer');
+const fs = require('fs');
+const fsp = fs.promises;
+const os = require('os');
+const path = require('path');
 const pool = require('../db/pool');
 const authMiddleware = require('../middleware/auth');
 const adminGuard = require('../middleware/adminGuard');
 const router = express.Router();
+
+const TEMP_UPLOAD_DIR = path.join(os.tmpdir(), 'art_bid_uploads');
+const LEGACY_UPLOADS_DIR = path.resolve(__dirname, '../../uploads');
+
+fs.mkdirSync(TEMP_UPLOAD_DIR, { recursive: true });
+
+const MIME_BY_EXTENSION = {
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.bmp': 'image/bmp',
+  '.svg': 'image/svg+xml',
+  '.avif': 'image/avif',
+};
+
+function inferMimeTypeFromPath(filePath) {
+  const ext = path.extname(filePath || '').toLowerCase();
+  return MIME_BY_EXTENSION[ext] || 'application/octet-stream';
+}
+
+function resolveLegacyUploadPath(imagePath) {
+  if (typeof imagePath !== 'string' || !imagePath.startsWith('/uploads/')) {
+    return null;
+  }
+
+  const fileName = path.basename(imagePath);
+  if (!fileName || fileName === '.' || fileName === '..') {
+    return null;
+  }
+
+  return path.join(LEGACY_UPLOADS_DIR, fileName);
+}
+
+async function migrateLegacyDiskImageToDb(imageId, row) {
+  const legacyFilePath = resolveLegacyUploadPath(row.image_path);
+  if (!legacyFilePath) {
+    return null;
+  }
+
+  try {
+    const imageBytes = await fsp.readFile(legacyFilePath);
+    const mimeType = row.mime_type || inferMimeTypeFromPath(legacyFilePath);
+    const canonicalPath = `/api/upload/images/${imageId}/content`;
+
+    await pool.query(
+      'UPDATE artwork_images SET image_data = $1, mime_type = COALESCE(mime_type, $2), image_path = $3 WHERE id = $4',
+      [imageBytes, mimeType, canonicalPath, imageId]
+    );
+
+    return { imageBytes, mimeType };
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      console.error(`Failed to migrate legacy image ${imageId}:`, err);
+    }
+    return null;
+  }
+}
 
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image/')) cb(null, true);
@@ -11,7 +74,13 @@ const fileFilter = (req, file, cb) => {
 };
 
 const upload = multer({
-  storage: multer.memoryStorage(),
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, TEMP_UPLOAD_DIR),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname || '').slice(0, 16);
+      cb(null, `${Date.now()}_${Math.random().toString(36).slice(2, 12)}${ext}`);
+    },
+  }),
   fileFilter,
   limits: { fileSize: 10 * 1024 * 1024 },
 });
@@ -38,11 +107,20 @@ router.get('/images/:imageId/content', async (req, res) => {
       return res.send(row.image_data);
     }
 
-    // Backward compatibility for older URL-based records.
-    if (row.image_path && /^https?:\/\//i.test(row.image_path)) {
+    if (row.image_path && row.image_path.startsWith('/uploads/')) {
+      const migrated = await migrateLegacyDiskImageToDb(imageId, row);
+      if (migrated) {
+        res.setHeader('Content-Type', migrated.mimeType);
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        return res.send(migrated.imageBytes);
+      }
+
+      // If the local file still exists, keep old links functional.
       return res.redirect(row.image_path);
     }
-    if (row.image_path && row.image_path.startsWith('/uploads/')) {
+
+    // Backward compatibility for older URL-based records.
+    if (row.image_path && /^https?:\/\//i.test(row.image_path)) {
       return res.redirect(row.image_path);
     }
 
@@ -54,7 +132,7 @@ router.get('/images/:imageId/content', async (req, res) => {
 });
 
 // POST /api/upload/artwork/:id/images (admin only)
-router.post('/artwork/:id/images', authMiddleware, adminGuard, upload.array('images', 30), async (req, res) => {
+router.post('/artwork/:id/images', authMiddleware, adminGuard, upload.array('images'), async (req, res) => {
   const { id } = req.params;
   const { is_primary } = req.body;
   if (!req.files || req.files.length === 0) {
@@ -69,6 +147,15 @@ router.post('/artwork/:id/images', authMiddleware, adminGuard, upload.array('ima
     const insertedImages = [];
     for (let i = 0; i < req.files.length; i++) {
       const file = req.files[i];
+      let imageBytes;
+      try {
+        imageBytes = await fsp.readFile(file.path);
+      } finally {
+        if (file.path) {
+          await fsp.unlink(file.path).catch(() => {});
+        }
+      }
+
       const isPrimary = i === 0 && is_primary !== 'false';
 
       if (isPrimary) {
@@ -79,7 +166,7 @@ router.post('/artwork/:id/images', authMiddleware, adminGuard, upload.array('ima
         `INSERT INTO artwork_images (artwork_id, image_path, image_data, mime_type, is_primary, display_order)
          VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING id`,
-        [id, '/api/upload/images/pending/content', file.buffer, file.mimetype || 'application/octet-stream', isPrimary, i]
+        [id, '/api/upload/images/pending/content', imageBytes, file.mimetype || 'application/octet-stream', isPrimary, i]
       );
 
       const imageId = inserted.rows[0].id;
@@ -98,12 +185,78 @@ router.post('/artwork/:id/images', authMiddleware, adminGuard, upload.array('ima
     if (client) {
       await client.query('ROLLBACK');
     }
+
+    await Promise.all(
+      (req.files || []).map((file) => (file.path ? fsp.unlink(file.path).catch(() => {}) : Promise.resolve()))
+    );
+
     console.error('Upload error:', err);
     res.status(500).json({ error: 'Failed to upload images' });
   } finally {
     if (client) {
       client.release();
     }
+  }
+});
+
+// POST /api/upload/images/backfill-legacy (admin only)
+// Migrates old /uploads/* rows into BYTEA so images survive server restarts.
+router.post('/images/backfill-legacy', authMiddleware, adminGuard, async (req, res) => {
+  const requestedLimit = Number(req.body?.limit ?? req.query?.limit ?? 500);
+  const limit = Number.isFinite(requestedLimit)
+    ? Math.min(Math.max(Math.trunc(requestedLimit), 1), 5000)
+    : 500;
+
+  try {
+    const pending = await pool.query(
+      `SELECT id, image_path, mime_type
+       FROM artwork_images
+       WHERE image_data IS NULL
+         AND image_path LIKE '/uploads/%'
+       ORDER BY id
+       LIMIT $1`,
+      [limit]
+    );
+
+    let migrated = 0;
+    let missing = 0;
+    let failed = 0;
+
+    for (const row of pending.rows) {
+      const legacyFilePath = resolveLegacyUploadPath(row.image_path);
+      if (!legacyFilePath) {
+        failed += 1;
+        continue;
+      }
+
+      try {
+        const imageBytes = await fsp.readFile(legacyFilePath);
+        const mimeType = row.mime_type || inferMimeTypeFromPath(legacyFilePath);
+        await pool.query(
+          'UPDATE artwork_images SET image_data = $1, mime_type = COALESCE(mime_type, $2), image_path = $3 WHERE id = $4',
+          [imageBytes, mimeType, `/api/upload/images/${row.id}/content`, row.id]
+        );
+        migrated += 1;
+      } catch (err) {
+        if (err.code === 'ENOENT') {
+          missing += 1;
+        } else {
+          failed += 1;
+          console.error(`Backfill failed for image ${row.id}:`, err);
+        }
+      }
+    }
+
+    return res.json({
+      scanned: pending.rows.length,
+      migrated,
+      missing,
+      failed,
+      note: 'Run this endpoint again until scanned becomes 0.',
+    });
+  } catch (err) {
+    console.error('Legacy backfill endpoint failed:', err);
+    return res.status(500).json({ error: 'Failed to backfill legacy images' });
   }
 });
 

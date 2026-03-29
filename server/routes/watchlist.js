@@ -13,7 +13,13 @@ router.get('/', async (req, res) => {
       SELECT w.artwork_id, w.created_at,
              a.title, a.artist_name, a.base_price, a.status,
              ast.current_highest_bid, ast.total_bids,
-             (SELECT image_path FROM artwork_images WHERE artwork_id = a.id AND is_primary = TRUE LIMIT 1) AS primary_image
+              (SELECT CASE
+               WHEN ai.image_path ~ '^https?://' AND ai.image_data IS NULL THEN ai.image_path
+               ELSE '/api/upload/images/' || ai.id || '/content'
+            END
+          FROM artwork_images ai
+          WHERE ai.artwork_id = a.id AND ai.is_primary = TRUE
+          LIMIT 1) AS primary_image
       FROM watchlist w
       JOIN artworks a ON a.id = w.artwork_id
       LEFT JOIN auction_state ast ON ast.artwork_id = a.id

@@ -38,7 +38,13 @@ router.get('/my', authMiddleware, async (req, res) => {
       SELECT DISTINCT ON (b.artwork_id)
         b.artwork_id, b.bid_amount, b.bid_time,
         a.title, a.artist_name,
-        (SELECT image_path FROM artwork_images WHERE artwork_id = a.id AND is_primary = TRUE LIMIT 1) AS primary_image,
+        (SELECT CASE
+                   WHEN ai.image_path ~ '^https?://' AND ai.image_data IS NULL THEN ai.image_path
+                   ELSE '/api/upload/images/' || ai.id || '/content'
+                END
+         FROM artwork_images ai
+         WHERE ai.artwork_id = a.id AND ai.is_primary = TRUE
+         LIMIT 1) AS primary_image,
         ast.current_highest_bid,
         ast.current_winner_id = $1 AS is_winning
       FROM bids b
