@@ -150,9 +150,8 @@ psql -h localhost -U chitra_user -d chitrakavyam -f server/db/migrations/004_sto
 After migration `004_store_artwork_image_bytes.sql`, old rows that still point to `/uploads/...` should be migrated to PostgreSQL bytes.
 
 - New uploads now use PostgreSQL-backed image content URLs automatically.
-- Existing legacy rows can be migrated by calling admin endpoint:
-	- `POST /api/upload/images/backfill-legacy`
-	- Optional body/query: `limit` (default 500, max 5000 per run)
+- Existing legacy rows can be migrated by calling admin endpoint: `POST /api/upload/images/backfill-legacy`.
+- Optional body/query for that endpoint: `limit` (default 500, max 5000 per run).
 - Repeat the endpoint call until response returns `scanned: 0`.
 
 Verify progress:
