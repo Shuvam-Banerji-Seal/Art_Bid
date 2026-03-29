@@ -146,7 +146,6 @@ rotate_log() {
 }
 
 start_backend() {
-  echo "Starting backend in background..."
   local lan_ip="$1"
   local client_urls
 
@@ -178,6 +177,8 @@ start_backend() {
       CLIENT_URLS="$client_urls" \
       npm run start
   fi
+
+  echo "Starting backend in background..."
 
   (
     cd "$SERVER_DIR"

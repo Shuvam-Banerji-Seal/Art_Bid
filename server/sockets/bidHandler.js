@@ -3,8 +3,25 @@ const pool = require('../db/pool');
 
 module.exports = function setupSocketHandlers(io) {
   let lastAuctionStatus = null;
+  let monitorPausedUntil = 0;
+  let lastMonitorErrorLogAt = 0;
+
+  const monitorIntervalMs = Number(process.env.AUCTION_MONITOR_INTERVAL_MS || 15000);
+  const monitorBackoffMs = Number(process.env.AUCTION_MONITOR_BACKOFF_MS || 60000);
+
+  function shouldBackoff(err) {
+    return err?.code === 'ECONNREFUSED'
+      || err?.code === 'ENOTFOUND'
+      || err?.code === 'ETIMEDOUT'
+      || err?.code === 'EHOSTUNREACH'
+      || err?.code === '57P03';
+  }
 
   const monitorAuctionState = async () => {
+    if (Date.now() < monitorPausedUntil) {
+      return;
+    }
+
     try {
       const configResult = await pool.query('SELECT * FROM auction_config ORDER BY id DESC LIMIT 1');
       if (configResult.rows.length === 0) return;
@@ -37,12 +54,21 @@ module.exports = function setupSocketHandlers(io) {
 
       lastAuctionStatus = status;
     } catch (err) {
-      console.error('Auction monitor error:', err);
+      if (shouldBackoff(err)) {
+        monitorPausedUntil = Date.now() + monitorBackoffMs;
+      }
+
+      // Avoid flooding logs when DB is temporarily unavailable.
+      if (Date.now() - lastMonitorErrorLogAt > 60000) {
+        const details = err?.code ? `${err.code}${err?.message ? `: ${err.message}` : ''}` : String(err);
+        console.error(`Auction monitor error (next retry in ${Math.ceil(Math.max(monitorPausedUntil - Date.now(), monitorIntervalMs) / 1000)}s): ${details}`);
+        lastMonitorErrorLogAt = Date.now();
+      }
     }
   };
 
   monitorAuctionState();
-  setInterval(monitorAuctionState, 15000);
+  setInterval(monitorAuctionState, monitorIntervalMs);
 
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token || socket.handshake.headers?.cookie

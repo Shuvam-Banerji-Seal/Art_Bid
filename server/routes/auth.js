@@ -6,19 +6,7 @@ const rateLimit = require('express-rate-limit');
 const router = express.Router();
 
 function getClientIp(req) {
-  const cfIp = req.get('cf-connecting-ip');
-  if (cfIp && cfIp.trim()) {
-    return cfIp.trim();
-  }
-
-  const forwarded = req.get('x-forwarded-for');
-  if (forwarded) {
-    const firstIp = forwarded.split(',')[0]?.trim();
-    if (firstIp) {
-      return firstIp;
-    }
-  }
-
+  // req.ip already respects Express trust proxy settings.
   return req.ip || req.connection?.remoteAddress || '';
 }
 

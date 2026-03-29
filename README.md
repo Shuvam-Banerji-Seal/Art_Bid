@@ -333,8 +333,11 @@ Set these in Render dashboard for your backend service:
 - `PG_POOL_MAX`: `35` (good baseline for ~100 concurrent users)
 - `PG_IDLE_TIMEOUT_MS`: `30000`
 - `PG_CONNECTION_TIMEOUT_MS`: `10000`
+- `TRUST_PROXY_HOPS`: `1` (avoids permissive trust-proxy setting while preserving real client IP)
 - `SIGNUP_RATE_LIMIT_MAX`: `20`
 - `LOGIN_RATE_LIMIT_MAX`: `30`
+- `AUCTION_MONITOR_INTERVAL_MS`: `15000`
+- `AUCTION_MONITOR_BACKOFF_MS`: `60000`
 
 Recommended Render policy:
 - Enable "Auto-Deploy" only after migration verification passes
