@@ -5,8 +5,53 @@ const pool = require('../db/pool');
 const rateLimit = require('express-rate-limit');
 const router = express.Router();
 
-const signupLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: 'Too many signup attempts' } });
-const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: 'Too many login attempts' } });
+function getClientIp(req) {
+  const cfIp = req.get('cf-connecting-ip');
+  if (cfIp && cfIp.trim()) {
+    return cfIp.trim();
+  }
+
+  const forwarded = req.get('x-forwarded-for');
+  if (forwarded) {
+    const firstIp = forwarded.split(',')[0]?.trim();
+    if (firstIp) {
+      return firstIp;
+    }
+  }
+
+  return req.ip || req.connection?.remoteAddress || '';
+}
+
+function normalizeEmail(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+const signupLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: Number(process.env.SIGNUP_RATE_LIMIT_MAX || 20),
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const ip = getClientIp(req);
+    const email = normalizeEmail(req.body?.email);
+    return email ? `${ip}:${email}` : ip;
+  },
+  message: { error: 'Too many signup attempts' },
+});
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: Number(process.env.LOGIN_RATE_LIMIT_MAX || 30),
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  keyGenerator: (req) => {
+    const ip = getClientIp(req);
+    const email = normalizeEmail(req.body?.email);
+    return email ? `${ip}:${email}` : ip;
+  },
+  message: { error: 'Too many login attempts' },
+});
 
 const JWT_SECRET = process.env.JWT_SECRET || 'chitrakavyam_secret';
 const USE_HTTPS = process.env.USE_HTTPS === 'true';

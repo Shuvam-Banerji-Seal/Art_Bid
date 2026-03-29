@@ -5,6 +5,7 @@ import { useAuction } from '../hooks/useAuction';
 import CountdownTimer from '../components/CountdownTimer';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
+import { resolveImageUrl } from '../utils/imageUrl';
 
 export default function AuthPage() {
   const [tab, setTab] = useState('login');
@@ -26,8 +27,8 @@ export default function AuthPage() {
   const emailTouched = form.email.length > 0;
 
   useEffect(() => {
-    api.get('/artworks', { params: { status: 'approved_auction', sort: 'highest_bid' } })
-      .then(res => setShowcase((res.data || []).slice(0, 3)))
+    api.get('/artworks', { params: { status: 'approved_auction', sort: 'highest_bid', limit: 3 } })
+      .then(res => setShowcase(res.data || []))
       .catch(() => setShowcase([]));
   }, []);
 
@@ -97,7 +98,7 @@ export default function AuthPage() {
         {showcase.length > 0 && (
           <>
             <img
-              src={showcase[showcaseIdx]?.primary_image || showcase[showcaseIdx]?.fallback_image}
+              src={resolveImageUrl(showcase[showcaseIdx]?.primary_image || showcase[showcaseIdx]?.fallback_image)}
               alt="showcase"
               style={{
                 position: 'absolute',

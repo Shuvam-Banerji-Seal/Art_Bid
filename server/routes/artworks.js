@@ -6,7 +6,7 @@ const router = express.Router();
 
 // GET /api/artworks
 router.get('/', async (req, res) => {
-  const { status, item_type, sort, search } = req.query;
+  const { status, item_type, sort, search, limit } = req.query;
   try {
     let whereClause = 'WHERE a.deleted_at IS NULL AND a.is_active = TRUE';
     const params = [];
@@ -26,6 +26,14 @@ router.get('/', async (req, res) => {
     if (sort === 'highest_bid') orderClause = 'ORDER BY COALESCE(ast.current_highest_bid, 0) DESC';
     else if (sort === 'most_bids') orderClause = 'ORDER BY COALESCE(ast.total_bids, 0) DESC';
     else if (sort === 'base_price') orderClause = 'ORDER BY a.base_price ASC';
+
+    let limitClause = '';
+    const parsedLimit = Number.parseInt(limit, 10);
+    if (Number.isFinite(parsedLimit) && parsedLimit > 0) {
+      const safeLimit = Math.min(parsedLimit, 100);
+      limitClause = `LIMIT $${paramIdx++}`;
+      params.push(safeLimit);
+    }
 
     const query = `
       SELECT a.id, a.title, a.artist_name, a.item_type, a.auction_or_exhibit, a.status,
@@ -50,6 +58,7 @@ router.get('/', async (req, res) => {
       LEFT JOIN auction_state ast ON ast.artwork_id = a.id
       ${whereClause}
       ${orderClause}
+      ${limitClause}
     `;
 
     const result = await pool.query(query, params);

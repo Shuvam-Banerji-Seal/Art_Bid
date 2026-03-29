@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
+import { resolveImageUrl } from '../../utils/imageUrl';
 
 const STATUS_OPTIONS = ['pending', 'approved_auction', 'approved_exhibit', 'not_for_sale', 'rejected'];
 const STATUS_LABELS = { pending: 'Pending', approved_auction: 'Auction', approved_exhibit: 'Exhibit', not_for_sale: 'Not for Sale', rejected: 'Rejected' };
@@ -462,7 +463,7 @@ function EditArtworkModal({ artwork, onClose }) {
           <div style={{ display: 'grid', gap: 8, marginTop: 10 }}>
             {images.map((img, idx) => (
               <div key={img.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 8, background: 'var(--bg-elevated)', borderRadius: 8 }}>
-                <img src={img.image_path} alt="artwork" style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 6 }} />
+                <img src={resolveImageUrl(img.image_path)} alt="artwork" style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 6 }} />
                 <div style={{ flex: 1, fontSize: 12, color: 'var(--text-muted)' }}>{img.image_path}</div>
                 <button className="btn btn-outline" onClick={() => moveImage(idx, -1)} style={{ padding: '4px 8px', fontSize: 11 }}>↑</button>
                 <button className="btn btn-outline" onClick={() => moveImage(idx, 1)} style={{ padding: '4px 8px', fontSize: 11 }}>↓</button>

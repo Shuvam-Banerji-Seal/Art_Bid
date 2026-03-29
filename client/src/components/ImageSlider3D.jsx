@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import anime from 'animejs/lib/anime.es.js';
+import { resolveImageUrl } from '../utils/imageUrl';
 
 export default function ImageSlider3D({ images = [] }) {
   const [index, setIndex] = useState(0);
@@ -55,7 +56,7 @@ export default function ImageSlider3D({ images = [] }) {
                 boxShadow: isActive ? '0 24px 60px rgba(0,0,0,0.55)' : '0 10px 25px rgba(0,0,0,0.35)',
               }}
             >
-              <img src={img.image_path} alt="Artwork" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={resolveImageUrl(img.image_path)} alt="Artwork" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
           );
         })}

@@ -17,7 +17,9 @@ const SSL_KEY_PATH = process.env.SSL_KEY_PATH;
 // Hosted platforms (like Render) sit behind a reverse proxy.
 // Trust first proxy so rate limiting and origin/ip checks behave correctly.
 if (process.env.RENDER === 'true' || process.env.NODE_ENV === 'production') {
-  app.set('trust proxy', 1);
+  // Render commonly sits behind multiple proxy hops (platform + edge/CDN).
+  // Trusting all proxy hops ensures req.ip resolves to the real client address.
+  app.set('trust proxy', true);
 }
 
 let server;

@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { resolveImageUrl } from '../utils/imageUrl';
 
 export default function ArtworkCard({ artwork, onBidUpdate, canWatch = false, isWatched = false, onToggleWatch }) {
   const [pulsing, setPulsing] = useState(false);
-  const imageUrl = artwork.primary_image || artwork.fallback_image;
+  const [imageFailed, setImageFailed] = useState(false);
+  const imageUrl = resolveImageUrl(artwork.primary_image || artwork.fallback_image);
 
   useEffect(() => {
     if (onBidUpdate) {
@@ -12,6 +14,10 @@ export default function ArtworkCard({ artwork, onBidUpdate, canWatch = false, is
       return () => clearTimeout(t);
     }
   }, [artwork.current_highest_bid]);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [imageUrl]);
 
   const isAuction = artwork.status === 'approved_auction';
   const isExhibit = artwork.status === 'approved_exhibit';
@@ -78,8 +84,15 @@ export default function ArtworkCard({ artwork, onBidUpdate, canWatch = false, is
             </span>
           </div>
 
-          {imageUrl ? (
-            <img src={imageUrl} alt={artwork.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          {imageUrl && !imageFailed ? (
+            <img
+              src={imageUrl}
+              alt={artwork.title}
+              loading="lazy"
+              decoding="async"
+              onError={() => setImageFailed(true)}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
           ) : (
             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 40 }}>🎨</div>
           )}
