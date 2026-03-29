@@ -135,6 +135,7 @@ From project root:
 psql "$DATABASE_URL" -f server/db/migrations/001_init.sql
 psql "$DATABASE_URL" -f server/db/migrations/002_fix_auction_state_trigger.sql
 psql "$DATABASE_URL" -f server/db/migrations/003_login_fingerprint.sql
+psql "$DATABASE_URL" -f server/db/migrations/004_store_artwork_image_bytes.sql
 ```
 
 If `DATABASE_URL` is not exported in shell:
@@ -142,6 +143,7 @@ If `DATABASE_URL` is not exported in shell:
 psql -h localhost -U chitra_user -d chitrakavyam -f server/db/migrations/001_init.sql
 psql -h localhost -U chitra_user -d chitrakavyam -f server/db/migrations/002_fix_auction_state_trigger.sql
 psql -h localhost -U chitra_user -d chitrakavyam -f server/db/migrations/003_login_fingerprint.sql
+psql -h localhost -U chitra_user -d chitrakavyam -f server/db/migrations/004_store_artwork_image_bytes.sql
 ```
 
 ## 7. Seed Sample Data (recommended for testing)

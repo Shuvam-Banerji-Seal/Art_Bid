@@ -1,7 +1,5 @@
 const { parse } = require('csv-parse/sync');
 const pool = require('../db/pool');
-const fs = require('fs/promises');
-const path = require('path');
 
 const CSV_COLUMN_MAP = {
   'Timestamp': 'submission_timestamp',
@@ -21,22 +19,22 @@ const CSV_COLUMN_MAP = {
   'Price of item to be sold in Stalls': 'stall_price',
 };
 
-async function downloadImageToUploads(imageUrl) {
-  const uploadsDir = path.join(__dirname, '../../uploads');
-  await fs.mkdir(uploadsDir, { recursive: true });
+function sanitizePrice(value) {
+  const cleaned = String(value).replace(/[^0-9.]/g, '');
+  const num = parseFloat(cleaned);
+  return Number.isNaN(num) ? null : num;
+}
 
+async function downloadImageToBuffer(imageUrl) {
   const response = await fetch(imageUrl);
   if (!response.ok) throw new Error(`Image download failed: ${response.status}`);
 
-  const contentType = response.headers.get('content-type') || 'image/jpeg';
-  const ext = contentType.includes('png') ? '.png' : contentType.includes('webp') ? '.webp' : '.jpg';
-  const filename = `csv_${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;
-  const fullPath = path.join(uploadsDir, filename);
-
+  const contentType = (response.headers.get('content-type') || 'image/jpeg').split(';')[0].trim();
   const arrayBuffer = await response.arrayBuffer();
-  await fs.writeFile(fullPath, Buffer.from(arrayBuffer));
-
-  return `/uploads/${filename}`;
+  return {
+    mimeType: contentType || 'image/jpeg',
+    buffer: Buffer.from(arrayBuffer),
+  };
 }
 
 async function importCSV(csvBuffer) {
@@ -51,12 +49,14 @@ async function importCSV(csvBuffer) {
         const value = record[csvCol];
         if (value !== undefined && value !== '') {
           if (dbField === 'base_price' || dbField === 'stall_price') {
-            const num = parseFloat(value.replace(/[₹,\s]/g, ''));
-            mapped[dbField] = isNaN(num) ? null : num;
+            mapped[dbField] = sanitizePrice(value);
           } else if (dbField === 'is_framed') {
             mapped[dbField] = value.toLowerCase().includes('yes') || value.toLowerCase() === 'true';
           } else if (dbField === 'submission_timestamp') {
-            mapped[dbField] = new Date(value);
+            const parsedDate = new Date(value);
+            if (!Number.isNaN(parsedDate.getTime())) {
+              mapped[dbField] = parsedDate;
+            }
           } else {
             mapped[dbField] = value;
           }
@@ -89,11 +89,19 @@ async function importCSV(csvBuffer) {
 
       if (imageUrl) {
         try {
-          const localPath = await downloadImageToUploads(imageUrl);
-          await pool.query(
-            'INSERT INTO artwork_images (artwork_id, image_path, is_primary, display_order) VALUES ($1, $2, TRUE, 0)',
-            [artworkInsert.rows[0].id, localPath]
+          const { buffer, mimeType } = await downloadImageToBuffer(imageUrl);
+          const insertedImage = await pool.query(
+            `INSERT INTO artwork_images (artwork_id, image_path, image_data, mime_type, is_primary, display_order)
+             VALUES ($1, $2, $3, $4, TRUE, 0)
+             RETURNING id`,
+            [artworkInsert.rows[0].id, '/api/upload/images/pending/content', buffer, mimeType]
           );
+
+          const imageId = insertedImage.rows[0].id;
+          await pool.query('UPDATE artwork_images SET image_path = $1 WHERE id = $2', [
+            `/api/upload/images/${imageId}/content`,
+            imageId,
+          ]);
         } catch (imgErr) {
           results.errors.push({ record, error: `Image import skipped: ${imgErr.message}` });
         }

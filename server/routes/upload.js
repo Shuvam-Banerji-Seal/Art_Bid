@@ -1,51 +1,109 @@
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
 const pool = require('../db/pool');
 const authMiddleware = require('../middleware/auth');
 const adminGuard = require('../middleware/adminGuard');
 const router = express.Router();
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, '../../uploads')),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `artwork_${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`);
-  },
-});
 
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image/')) cb(null, true);
   else cb(new Error('Only image files are allowed'), false);
 };
 
-const upload = multer({ storage, fileFilter, limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
+
+// GET /api/upload/images/:imageId/content
+// Serves image bytes stored in PostgreSQL.
+router.get('/images/:imageId/content', async (req, res) => {
+  const { imageId } = req.params;
+  try {
+    const result = await pool.query(
+      'SELECT image_data, mime_type, image_path FROM artwork_images WHERE id = $1',
+      [imageId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Image not found' });
+    }
+
+    const row = result.rows[0];
+
+    if (row.image_data) {
+      res.setHeader('Content-Type', row.mime_type || 'application/octet-stream');
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      return res.send(row.image_data);
+    }
+
+    // Backward compatibility for older URL-based records.
+    if (row.image_path && /^https?:\/\//i.test(row.image_path)) {
+      return res.redirect(row.image_path);
+    }
+    if (row.image_path && row.image_path.startsWith('/uploads/')) {
+      return res.redirect(row.image_path);
+    }
+
+    return res.status(404).json({ error: 'Image data not available' });
+  } catch (err) {
+    console.error('Error serving image:', err);
+    return res.status(500).json({ error: 'Failed to serve image' });
+  }
+});
 
 // POST /api/upload/artwork/:id/images (admin only)
-router.post('/artwork/:id/images', authMiddleware, adminGuard, upload.array('images', 10), async (req, res) => {
+router.post('/artwork/:id/images', authMiddleware, adminGuard, upload.array('images', 30), async (req, res) => {
   const { id } = req.params;
   const { is_primary } = req.body;
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ error: 'No images uploaded' });
+  }
+
+  let client;
   try {
+    client = await pool.connect();
+    await client.query('BEGIN');
+
     const insertedImages = [];
     for (let i = 0; i < req.files.length; i++) {
       const file = req.files[i];
-      const imagePath = `/uploads/${file.filename}`;
       const isPrimary = i === 0 && is_primary !== 'false';
 
       if (isPrimary) {
-        await pool.query('UPDATE artwork_images SET is_primary = FALSE WHERE artwork_id = $1', [id]);
+        await client.query('UPDATE artwork_images SET is_primary = FALSE WHERE artwork_id = $1', [id]);
       }
 
-      const result = await pool.query(
-        'INSERT INTO artwork_images (artwork_id, image_path, is_primary, display_order) VALUES ($1, $2, $3, $4) RETURNING *',
-        [id, imagePath, isPrimary, i]
+      const inserted = await client.query(
+        `INSERT INTO artwork_images (artwork_id, image_path, image_data, mime_type, is_primary, display_order)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING id`,
+        [id, '/api/upload/images/pending/content', file.buffer, file.mimetype || 'application/octet-stream', isPrimary, i]
+      );
+
+      const imageId = inserted.rows[0].id;
+      const dbImagePath = `/api/upload/images/${imageId}/content`;
+
+      const result = await client.query(
+        'UPDATE artwork_images SET image_path = $1 WHERE id = $2 RETURNING id, artwork_id, image_path, is_primary, display_order, uploaded_at',
+        [dbImagePath, imageId]
       );
       insertedImages.push(result.rows[0]);
     }
+
+    await client.query('COMMIT');
     res.status(201).json(insertedImages);
   } catch (err) {
+    if (client) {
+      await client.query('ROLLBACK');
+    }
     console.error('Upload error:', err);
     res.status(500).json({ error: 'Failed to upload images' });
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 });
 

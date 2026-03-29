@@ -77,13 +77,22 @@ router.get('/:id', async (req, res) => {
 
 // POST /api/artworks (admin only)
 router.post('/', authMiddleware, adminGuard, async (req, res) => {
-  const { artist_name, title, description, base_price, item_type, auction_or_exhibit, medium, surface_used, is_framed, dimensions, artist_email, artist_roll, artist_contact, status } = req.body;
+  const { artist_name, title, description, base_price, stall_price, item_type, auction_or_exhibit, medium, surface_used, is_framed, dimensions, artist_email, artist_roll, artist_contact, status } = req.body;
   try {
+    let price = base_price;
+    if (typeof price === 'string') {
+      price = price.replace(/[^0-9.]/g, '');
+    }
+    let sPrice = stall_price;
+    if (typeof sPrice === 'string') {
+      sPrice = sPrice.replace(/[^0-9.]/g, '');
+    }
+    
     const result = await pool.query(`
-      INSERT INTO artworks (artist_name, title, description, base_price, item_type, auction_or_exhibit, medium, surface_used, is_framed, dimensions, artist_email, artist_roll, artist_contact, status)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      INSERT INTO artworks (artist_name, title, description, base_price, stall_price, item_type, auction_or_exhibit, medium, surface_used, is_framed, dimensions, artist_email, artist_roll, artist_contact, status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *
-    `, [artist_name, title, description, base_price, item_type, auction_or_exhibit, medium, surface_used, is_framed, dimensions, artist_email, artist_roll, artist_contact, status || 'pending']);
+    `, [artist_name, title, description, price || null, sPrice || null, item_type, auction_or_exhibit, medium, surface_used, is_framed, dimensions, artist_email, artist_roll, artist_contact, status || 'pending']);
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Error creating artwork:', err);
@@ -95,12 +104,18 @@ router.post('/', authMiddleware, adminGuard, async (req, res) => {
 router.patch('/:id', authMiddleware, adminGuard, async (req, res) => {
   const { id } = req.params;
   const fields = req.body;
-  const allowed = ['title', 'description', 'base_price', 'status', 'item_type', 'auction_or_exhibit', 'medium', 'surface_used', 'is_framed', 'dimensions', 'artist_name', 'artist_email', 'artist_roll', 'artist_contact', 'is_active'];
+  const allowed = ['title', 'description', 'base_price', 'stall_price', 'stall_items', 'status', 'item_type', 'auction_or_exhibit', 'medium', 'surface_used', 'is_framed', 'dimensions', 'artist_name', 'artist_email', 'artist_roll', 'artist_contact', 'is_active'];
   const updates = Object.entries(fields).filter(([k]) => allowed.includes(k));
   if (updates.length === 0) return res.status(400).json({ error: 'No valid fields to update' });
 
   const setClause = updates.map(([k], i) => `${k} = $${i + 2}`).join(', ');
-  const values = updates.map(([, v]) => v);
+  const values = updates.map(([k, v]) => {
+    if ((k === 'base_price' || k === 'stall_price') && typeof v === 'string') {
+      const sanitized = v.replace(/[^0-9.]/g, '');
+      return sanitized === '' ? null : sanitized;
+    }
+    return v;
+  });
 
   try {
     const result = await pool.query(

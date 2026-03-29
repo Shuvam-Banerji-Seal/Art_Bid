@@ -168,3 +168,20 @@ server.listen(PORT, () => {
   const scheme = USE_HTTPS ? 'https' : 'http';
   console.log(`Chitrakavyam server running on ${scheme}://localhost:${PORT}`);
 });
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled Server Error:', err);
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({ error: `Upload limit error: ${err.message}` });
+  }
+  res.status(500).json({ error: 'Internal server error' });
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
