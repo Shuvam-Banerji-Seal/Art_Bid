@@ -10,6 +10,21 @@ npm-debug.log*
 server/.env
 client/.env
 
+# Local runtime/state artifacts
+.local-pg/
+logs/*.out
+logs/*.out.old.*
+*.pid
+server/server.pid
+client/client.pid
+
+# Local ops binaries/download artifacts
+noip-duc_3.3.0.tar.gz
+noip-duc_3.3.0/binaries/*.gz
+
+# Runtime uploads generated on local/dev runs
+uploads/
+
 # Build artifacts
 client/dist/
 

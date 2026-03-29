@@ -297,5 +297,60 @@ Recheck owner/privileges for `chitra_user` and schema grants.
 - Use reverse proxy (Nginx sample in `ops/nginx.chitrakavyam.conf`)
 - Run periodic backups (`ops/backup_db.sh`)
 
+## Render PostgreSQL to Supabase Migration (no secret commit flow)
+
+This backend already uses PostgreSQL via `DATABASE_URL`, so moving to Supabase does not require code rewrites.
+
+### 1. Collect required values (outside git)
+- Source Render DB URL (full connection string)
+- Destination Supabase DB URL (full connection string)
+- Keep both in shell env only; do not write real values to tracked files
+
+### 2. Run migration script with verification
+From project root:
+```bash
+chmod +x ops/migrate_render_to_supabase.sh
+SRC_DATABASE_URL='postgresql://render_user:***@render-host/render_db?sslmode=require' \
+DEST_DATABASE_URL='postgresql://postgres.<project-ref>:***@aws-0-<region>.pooler.supabase.com:6543/postgres?sslmode=require' \
+./ops/migrate_render_to_supabase.sh
+```
+
+What this script does:
+- Creates a `pg_dump` custom-format backup from source
+- Restores into destination using `pg_restore --clean --if-exists`
+- Verifies row counts for all `public.*` tables
+- Verifies sequence `last_value` snapshots
+
+Artifacts are saved under `./tmp/db_migration_*` so you can audit before cutover.
+
+### 3. Render UI environment variables (backend service)
+Set these in Render dashboard for your backend service:
+
+- `DATABASE_URL`: Supabase PostgreSQL URL (pooled or direct; include `sslmode=require`)
+- `JWT_SECRET`: strong random secret
+- `NODE_ENV`: `production`
+- `CLIENT_URLS`: your frontend origin(s), comma separated
+- `PG_POOL_MAX`: `35` (good baseline for ~100 concurrent users)
+- `PG_IDLE_TIMEOUT_MS`: `30000`
+- `PG_CONNECTION_TIMEOUT_MS`: `10000`
+- `SIGNUP_RATE_LIMIT_MAX`: `20`
+- `LOGIN_RATE_LIMIT_MAX`: `30`
+
+Recommended Render policy:
+- Enable "Auto-Deploy" only after migration verification passes
+- Keep old Render DB untouched until production traffic is stable on Supabase
+
+### 4. Secret-safe push checklist
+- Confirm `.env`, `server/.env`, `client/.env` remain ignored
+- Stage only intended source/docs files (do not use `git add .`)
+- Run a pre-push scan:
+```bash
+git diff --cached | rg -n 'postgresql://|SUPABASE|JWT_SECRET|password|api[_-]?key|secret' || true
+```
+- Verify staged files list:
+```bash
+git diff --cached --name-only
+```
+
 ## Credits
 Developed by [Shuvam Banerji Seal](https://shuvam-banerji-seal.github.io/).
