@@ -49,6 +49,7 @@ export default function ArtworkCard({ artwork, onBidUpdate, canWatch = false, is
                 onToggleWatch?.(artwork.id, isWatched);
               }}
               title={isWatched ? 'Remove from watchlist' : 'Add to watchlist'}
+              aria-label={isWatched ? 'Remove from watchlist' : 'Add to watchlist'}
               style={{
                 position: 'absolute',
                 left: 10,

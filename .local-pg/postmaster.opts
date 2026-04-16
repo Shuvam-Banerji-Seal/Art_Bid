@@ -1,1 +1,0 @@
-/usr/bin/postgres "-D" "/home/shuvam/codes/Art_Bid/.local-pg" "-p" "5432" "-h" "127.0.0.1,localhost" "-k" "/home/shuvam/codes/Art_Bid/.local-pg"
